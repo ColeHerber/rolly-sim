@@ -14,7 +14,7 @@ def simulate_actuator_rotation():
     """
     try:
         # Load the MuJoCo model from the XML string
-        model = mujoco.MjModel.from_xml_path("my-robot/scene.xml")
+        model = mujoco.MjModel.from_xml_path("roller/scene.xml")
         data = mujoco.MjData(model)
 
         # Ensure the model and data are valid
