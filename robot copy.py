@@ -70,7 +70,8 @@ def roller_actuator_rotation():
         vel_percent = -10
         target_percent = -2
         do_print = False
-        command_delay = 0.5  # allow simulation to settle before sending actuator commands
+        startup_ramp_duration = 0.1  # seconds to blend control in; lower is snappier, 0 disables ramp
+        filter_time_constant = 0.05  # seconds; lower = quicker response, higher = smoother output
         # Initialize the viewer
         with mujoco.viewer.launch_passive(model, data) as viewer:
 
@@ -94,13 +95,18 @@ def roller_actuator_rotation():
             
             boot_time = data.time
             last_print_time = data.time
-            commands_enabled = False
+            filtered_ctrl = {}
+            for L_id, R_id, *_ in bugs.values():
+                filtered_ctrl[L_id] = 0.0
+                filtered_ctrl[R_id] = 0.0
+            prev_time = data.time
             print(boot_time)
             while viewer.is_running():
                 current_time = data.time
-
-                if not commands_enabled and (current_time - boot_time) >= command_delay:
-                    commands_enabled = True
+                dt = current_time - prev_time if prev_time is not None else model.opt.timestep
+                if dt <= 0:
+                    dt = model.opt.timestep
+                prev_time = current_time
 
                 if (current_time - last_print_time) >= 0.1:
                     do_print = True
@@ -110,11 +116,12 @@ def roller_actuator_rotation():
                 else:
                     do_print = False
 
+                ramp_scale = 1.0
+                if startup_ramp_duration > 0:
+                    ramp_elapsed = current_time - boot_time
+                    ramp_scale = np.clip(ramp_elapsed / startup_ramp_duration, 0.0, 1.0)
+
                 for name, [L_id, R_id,sens_id,accel_name,vel_name, velocity] in bugs.items():
-                    if not commands_enabled:
-                        data.ctrl[L_id] = 0.0
-                        data.ctrl[R_id] = 0.0
-                        continue
 
                     accel = data.sensor(accel_name).data
                     vel = data.sensor(vel_name).data
@@ -135,8 +142,18 @@ def roller_actuator_rotation():
 
                     speed = 1- angle
                     speed_multiplier =500
-                    data.ctrl[L_id] = np.float64(speed_multiplier*speed)
-                    data.ctrl[R_id] = np.float64(speed_multiplier*speed)
+                    target_ctrl = np.float64(speed_multiplier*speed) * ramp_scale
+
+                    if filter_time_constant > 0:
+                        alpha = 1 - np.exp(-dt / filter_time_constant)
+                        alpha = np.clip(alpha, 0.0, 1.0)
+                        filtered_ctrl[L_id] += alpha * (target_ctrl - filtered_ctrl[L_id])
+                        filtered_ctrl[R_id] += alpha * (target_ctrl - filtered_ctrl[R_id])
+                        data.ctrl[L_id] = filtered_ctrl[L_id]
+                        data.ctrl[R_id] = filtered_ctrl[R_id]
+                    else:
+                        data.ctrl[L_id] = target_ctrl
+                        data.ctrl[R_id] = target_ctrl
 
 
                     # print(speed)
