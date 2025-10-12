@@ -7,10 +7,10 @@ from mujoco.viewer import launch_passive
 
 # Load the MuJoCo model
 
-def srollylate_actuator_rotation():
+def roller_actuator_rotation():
     """
     Loads a MuJoCo model from XML, sets target velocities for actuators,
-    and runs a srollylation with visualization.
+    and runs a roller with visualization.
     """
     try:
         # Load the MuJoCo model from the XML string
@@ -22,7 +22,7 @@ def srollylate_actuator_rotation():
             print("Error: Could not load MuJoCo model from XML string.")
             return
         
-        target_body_name = 'refrence'
+        target_body_name = 'control'
         target_body_id = model.body(target_body_name).id
 
 
@@ -33,12 +33,16 @@ def srollylate_actuator_rotation():
         # These values are in radians/second, matching the `angle="radian"` compiler setting
        
         bugs = {
-            "rolly1": [model.actuator("rolly1_L").id, model.actuator("rolly1_R").id, model.site("rolly1_site").id, "rolly1_accel", "rolly1_gyro", "0.5"],
-            "rolly2": [model.actuator("rolly2_L").id, model.actuator("rolly2_R").id, model.site("rolly2_site").id, "rolly2_accel", "rolly2_gyro", "0.5"],
-            "rolly3": [model.actuator("rolly3_L").id, model.actuator("rolly3_R").id, model.site("rolly3_site").id, "rolly3_accel", "rolly3_gyro", "0.5"],
+            "roller1": [model.actuator("L1").id, model.actuator("R1").id, model.site("roller1").id, "roller1_accel", "roller1_gyro", "0.5"],
+            "roller2": [model.actuator("L2").id, model.actuator("R2").id, model.site("roller2").id, "roller2_accel", "roller2_gyro", "0.5"],
+            "roller3": [model.actuator("L3").id, model.actuator("R3").id, model.site("roller3").id, "roller3_accel", "roller3_gyro", "0.5"],
+            "roller4": [model.actuator("L4").id, model.actuator("R4").id, model.site("roller4").id, "roller4_accel", "roller4_gyro", "0.5"],
+            "roller5": [model.actuator("L5").id, model.actuator("R5").id, model.site("roller5").id, "roller5_accel", "roller5_gyro", "0.5"],
+            "roller6": [model.actuator("L6").id, model.actuator("R6").id, model.site("roller6").id, "roller6_accel", "roller6_gyro", "0.5"],
+
         }
 
-        grav = np.array([0,-9.81,0])
+        grav = np.array([0,0,-9.81])
         axis = np.array([1, 0, 0])  # rotate around X axis
         angle_degrees = 0
 
@@ -74,16 +78,16 @@ def srollylate_actuator_rotation():
             viewer.cam.type = mujoco.mjtCamera.mjCAMERA_TRACKING
             viewer.cam.trackbodyid = target_body_id
 
-            # Optional: Adjust initial camera distance, azrollyth, elevation
+            # Optional: Adjust initial camera distance, azrollerth, elevation
             # These values are relative to the tracked body and can still be adjusted by the user in the viewer
             viewer.cam.distance = 2.0  # Distance from the target
             viewer.cam.azimuth = 90    # Horizontal angle
             viewer.cam.elevation = -10 # Vertical angle
 
-            print("\nMuJoCo Srollylation Started. Press ESC or close window to exit.")
+            print("\nMuJoCo roller Started. Press ESC or close window to exit.")
             print("Actuator Target Velocities (rad/s):")
 
-            # Srollylation loop
+            # roller loop
             
             start_time = data.time
             print(start_time)
@@ -102,25 +106,26 @@ def srollylate_actuator_rotation():
                     accel = data.sensor(accel_name).data
                     vel = data.sensor(vel_name).data
                     
-                    speed_grav = min(0,speed_target*grav_percent*(np.dot(accel, grav) / (np.linalg.norm(accel)* np.linalg.norm(grav))))
-                    speed_vel = speed_target*vel_percent*(np.dot(vel,[0,1,0]))
-                    speed = min(0,target_percent*speed_target-speed_grav+speed_vel)
-
-
+                    speed_grav = speed_target*grav_percent*(np.dot(accel, grav) / (np.linalg.norm(accel)* np.linalg.norm(grav)))
                     # speed = (speed_target-(np.dot(accel, grav) / (np.linalg.norm(accel)* np.linalg.norm(grav))))
 
-                    # speed = 1 - (np.linalg.norm(np.cross(accel, grav)) / (np.linalg.norm(accel) * np.linalg.norm(grav)))
+                    speed = 1 - (np.linalg.norm(np.cross(accel, grav)) / (np.linalg.norm(accel) * np.linalg.norm(grav)))
                     # speed = 1 #constant speed
-                    data.ctrl[L_id] = np.float64(speed)
-                    data.ctrl[R_id] = np.float64(-speed)
+
+                    # speed = 100
+                    data.ctrl[L_id] = np.float64(10 * speed)
+                    data.ctrl[R_id] = np.float64(10* speed)
 
 
                     # print(speed)
                     if do_print:
                         temp0 = np.concatenate((accel, vel))
-                        temp1 = [speed_grav, speed_vel]
-                        temp = np.concatenate((temp0,temp1))
-                        printable = np.round(np.concatenate((temp, [speed])),3)
+
+                        # temp1 = [speed_grav, speed_vel]
+                        # temp = np.concatenate((temp0,temp1))
+                        # printable = np.round(np.concatenate((temp, [speed])),3)
+
+                        printable = np.round(np.concatenate((temp0, [speed])),3)
 
                         value_line = " ".join(f"{val:>7.3g}" for val in printable)
                         print(value_line)
@@ -133,14 +138,14 @@ def srollylate_actuator_rotation():
                     
                 
 
-                # Step the srollylation forward
+                # Step the roller forward
                 mujoco.mj_step(model, data)
 
                 # Update the viewer
                 
                 viewer.sync()
 
-                # Ensure consistent srollylation time step
+                # Ensure consistent roller time step
                 # time_until_next_step = model.opt.timestep - (mujoco.mj_get_current_sensordata(model, data).time - step_start)
                 # if time_until_next_step > 0:
                 #     pass # You can add a sleep here if needed for real-time pacing,
@@ -149,8 +154,8 @@ def srollylate_actuator_rotation():
                 pass
                 
     except Exception as e:
-        print(f"An error occurred during srollylation: {e}")
+        print(f"An error occurred during roller: {e}")
 
 if __name__ == "__main__":
-    # Call the srollylation function when the script is executed
-    srollylate_actuator_rotation()
+    # Call the roller function when the script is executed
+    roller_actuator_rotation()

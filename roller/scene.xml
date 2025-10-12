@@ -20,7 +20,7 @@
     <worldbody>
         <light pos="0 0 3.5" dir="0 0 -0.3" directional="true" />
         <geom name="floor" size="0 0 0.05" pos="0 0 -0.3" type="plane" material="groundplane"/>
-        <camera name="track_cam" mode="trackcom" target="refrence" pos="0 -2 1" /> 
+        <camera name="track_cam" mode="trackcom" target="control" pos="0 -2 1" /> 
     </worldbody>
 
 </mujoco>

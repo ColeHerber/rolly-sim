@@ -1,0 +1,43 @@
+Metadata-Version: 2.4
+Name: onshape_to_robot
+Version: 1.7.7
+Summary: Converting Onshape assembly to robot definition (URDF, SDF, MuJoCo) through Onshape API 
+Home-page: https://github.com/rhoban/onshape-to-robot/
+Author: Rhoban team
+Author-email: team@rhoban.com
+Keywords: robot robotics cad design onshape bullet pybullet mujoco urdf sdf gazebo ros model kinematics
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy
+Requires-Dist: requests
+Requires-Dist: commentjson
+Requires-Dist: colorama>=0.4.6
+Requires-Dist: numpy-stl
+Requires-Dist: transforms3d
+Requires-Dist: python-dotenv
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# Onshape to robot (URDF, SDF, MuJoCo)
+
+This tool is based on the [Onshape API](https://dev-portal.onshape.com/) to retrieve
+informations from an assembly and build a robot description (URDF, SDF, MuJoCo) suitable for physics
+simulation.
+
+* Check out the [official documentation](https://onshape-to-robot.readthedocs.io/)
+* [GitHub repository](https://github.com/rhoban/onshape-to-robot/)
+* [Robots examples](https://github.com/rhoban/onshape-to-robot-examples)
+
