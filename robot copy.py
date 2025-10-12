@@ -134,7 +134,7 @@ def roller_actuator_rotation():
                     #     speed = -1                   # speed = (angle)/(np.pi)
 
                     speed = 1- angle
-                    speed_multiplier =300
+                    speed_multiplier =500
                     data.ctrl[L_id] = np.float64(speed_multiplier*speed)
                     data.ctrl[R_id] = np.float64(speed_multiplier*speed)
 
