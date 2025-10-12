@@ -42,9 +42,11 @@ def roller_actuator_rotation():
 
         }
 
-        grav = np.array([0,0,-9.81])
+        # grav = np.array([0,0,-9.81])
+        grav = np.array([0,0,-1])
+
         axis = np.array([1, 0, 0])  # rotate around X axis
-        angle_degrees = 0
+        n = np.array([1,0,0])   # x-axis defines the "sign" direction
 
         # Create the rotation object
         # r = R.from_rotvec(np.radians(angle_degrees) * axis)
@@ -54,7 +56,7 @@ def roller_actuator_rotation():
         labels = [
             "ax", "ay", "az", 
             "vx", "vy", "vz", 
-            "speed_g", "speed_v", 
+             "grav%",
             "speed"
                 ]
         label_line = " ".join(f"{label:>7}" for label in labels)
@@ -68,6 +70,7 @@ def roller_actuator_rotation():
         vel_percent = -10
         target_percent = -2
         do_print = False
+        command_delay = 0.5  # allow simulation to settle before sending actuator commands
         # Initialize the viewer
         with mujoco.viewer.launch_passive(model, data) as viewer:
 
@@ -89,43 +92,63 @@ def roller_actuator_rotation():
 
             # roller loop
             
-            start_time = data.time
-            print(start_time)
+            boot_time = data.time
+            last_print_time = data.time
+            commands_enabled = False
+            print(boot_time)
             while viewer.is_running():
+                current_time = data.time
 
-                step_start = data.time
+                if not commands_enabled and (current_time - boot_time) >= command_delay:
+                    commands_enabled = True
+
+                if (current_time - last_print_time) >= 0.1:
+                    do_print = True
+                    last_print_time = current_time
+                    print("--------------------------------------------------------------------------------")
+                    print(label_line)
+                else:
+                    do_print = False
+
                 for name, [L_id, R_id,sens_id,accel_name,vel_name, velocity] in bugs.items():
-                    # print(pos)
-                    if (step_start-start_time) >= 1:
-                        do_print = True
-                        start_time = step_start
-                        print("--------------------------------------------------------------------------------")
-                        print(label_line)
-
+                    if not commands_enabled:
+                        data.ctrl[L_id] = 0.0
+                        data.ctrl[R_id] = 0.0
+                        continue
 
                     accel = data.sensor(accel_name).data
                     vel = data.sensor(vel_name).data
                     
-                    speed_grav = speed_target*grav_percent*(np.dot(accel, grav) / (np.linalg.norm(accel)* np.linalg.norm(grav)))
+                    # speed_grav = speed_target*grav_percent*(np.dot(accel, grav) / (np.linalg.norm(accel)* np.linalg.norm(grav)))
                     # speed = (speed_target-(np.dot(accel, grav) / (np.linalg.norm(accel)* np.linalg.norm(grav))))
+                    
+                    vel = data.sensor(vel_name).data
+                    # speed = np.linalg.norm(np.cross(accel, grav))
+                    accel = accel/np.linalg.norm(accel)
+                    # cross = np.cross(accel, grav)
+                    angle = np.dot(accel, grav)
 
-                    speed = 1 - (np.linalg.norm(np.cross(accel, grav)) / (np.linalg.norm(accel) * np.linalg.norm(grav)))
-                    # speed = 1 #constant speed
+                    # if angle >= -0.5:
+                    #     speed = 1
+                    # else:
+                    #     speed = -1                   # speed = (angle)/(np.pi)
 
-                    # speed = 100
-                    data.ctrl[L_id] = np.float64(10 * speed)
-                    data.ctrl[R_id] = np.float64(10* speed)
+                    speed = 1- angle
+                    speed_multiplier =300
+                    data.ctrl[L_id] = np.float64(speed_multiplier*speed)
+                    data.ctrl[R_id] = np.float64(speed_multiplier*speed)
 
 
                     # print(speed)
                     if do_print:
                         temp0 = np.concatenate((accel, vel))
 
-                        # temp1 = [speed_grav, speed_vel]
+                        temp1 = [angle, speed]
                         # temp = np.concatenate((temp0,temp1))
                         # printable = np.round(np.concatenate((temp, [speed])),3)
 
-                        printable = np.round(np.concatenate((temp0, [speed])),3)
+                        # printable = np.round(np.concatenate((temp0, [speed])),3)
+                        printable = np.round(np.concatenate((temp0, temp1)),3)
 
                         value_line = " ".join(f"{val:>7.3g}" for val in printable)
                         print(value_line)
@@ -150,7 +173,7 @@ def roller_actuator_rotation():
                 # if time_until_next_step > 0:
                 #     pass # You can add a sleep here if needed for real-time pacing,
                 #          # but viewer.sync() usually handles frame rate.
-                time.sleep(0.001)
+                time.sleep(0.01)
                 pass
                 
     except Exception as e:
