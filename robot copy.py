@@ -33,12 +33,12 @@ def roller_actuator_rotation():
         # These values are in radians/second, matching the `angle="radian"` compiler setting
        
         bugs = {
-            "roller1": [model.actuator("L1").id, model.actuator("R1").id, model.site("roller1").id, "roller1_accel", "roller1_gyro", "0.5"],
-            "roller2": [model.actuator("L2").id, model.actuator("R2").id, model.site("roller2").id, "roller2_accel", "roller2_gyro", "0.5"],
-            "roller3": [model.actuator("L3").id, model.actuator("R3").id, model.site("roller3").id, "roller3_accel", "roller3_gyro", "0.5"],
-            "roller4": [model.actuator("L4").id, model.actuator("R4").id, model.site("roller4").id, "roller4_accel", "roller4_gyro", "0.5"],
-            "roller5": [model.actuator("L5").id, model.actuator("R5").id, model.site("roller5").id, "roller5_accel", "roller5_gyro", "0.5"],
-            "roller6": [model.actuator("L6").id, model.actuator("R6").id, model.site("roller6").id, "roller6_accel", "roller6_gyro", "0.5"],
+            "roller1": [model.actuator("L1").id, model.actuator("R1").id, model.site("roller1").id, "roller1_accel", "roller1_gyro", "L1_w", "R1_w", "0.5"],
+            "roller2": [model.actuator("L2").id, model.actuator("R2").id, model.site("roller2").id, "roller2_accel", "roller2_gyro", "L2_w", "R2_w", "0.5"],
+            "roller3": [model.actuator("L3").id, model.actuator("R3").id, model.site("roller3").id, "roller3_accel", "roller3_gyro", "L3_w", "R3_w", "0.5"],
+            "roller4": [model.actuator("L4").id, model.actuator("R4").id, model.site("roller4").id, "roller4_accel", "roller4_gyro", "L4_w", "R4_w", "0.5"],
+            "roller5": [model.actuator("L5").id, model.actuator("R5").id, model.site("roller5").id, "roller5_accel", "roller5_gyro", "L5_w", "R5_w", "0.5"],
+            "roller6": [model.actuator("L6").id, model.actuator("R6").id, model.site("roller6").id, "roller6_accel", "roller6_gyro", "L6_w", "R6_w", "0.5"],
 
         }
 
@@ -56,8 +56,7 @@ def roller_actuator_rotation():
         labels = [
             "ax", "ay", "az", 
             "vx", "vy", "vz", 
-             "grav%",
-            "speed"
+             "grav%", "command", "L_w", "R_w", 
                 ]
         label_line = " ".join(f"{label:>7}" for label in labels)
 
@@ -70,8 +69,8 @@ def roller_actuator_rotation():
         vel_percent = -10
         target_percent = -2
         do_print = False
-        startup_ramp_duration = 0.1  # seconds to blend control in; lower is snappier, 0 disables ramp
-        filter_time_constant = 0.05  # seconds; lower = quicker response, higher = smoother output
+        startup_ramp_duration = 0.2  # seconds to blend control in; lower is snappier, 0 disables ramp
+        filter_time_constant = 0.000  # seconds; lower = quicker response, higher = smoother output
         # Initialize the viewer
         with mujoco.viewer.launch_passive(model, data) as viewer:
 
@@ -121,10 +120,13 @@ def roller_actuator_rotation():
                     ramp_elapsed = current_time - boot_time
                     ramp_scale = np.clip(ramp_elapsed / startup_ramp_duration, 0.0, 1.0)
 
-                for name, [L_id, R_id,sens_id,accel_name,vel_name, velocity] in bugs.items():
+                for name, [L_id, R_id,sens_id, accel_name,vel_name, left_name, right_name, velocity] in bugs.items():
 
                     accel = data.sensor(accel_name).data
                     vel = data.sensor(vel_name).data
+                    left_w = float(data.sensor(left_name).data[0])
+                    right_w = float(data.sensor(right_name).data[0])
+
                     
                     # speed_grav = speed_target*grav_percent*(np.dot(accel, grav) / (np.linalg.norm(accel)* np.linalg.norm(grav)))
                     # speed = (speed_target-(np.dot(accel, grav) / (np.linalg.norm(accel)* np.linalg.norm(grav))))
@@ -139,10 +141,10 @@ def roller_actuator_rotation():
                     #     speed = 1
                     # else:
                     #     speed = -1                   # speed = (angle)/(np.pi)
+                    speed_multiplier = 300
 
-                    speed = 1- angle
-                    speed_multiplier =500
-                    target_ctrl = np.float64(speed_multiplier*speed) * ramp_scale
+                    speed = (1- angle+0.5)*speed_multiplier
+                    target_ctrl = np.float64(speed) * ramp_scale
 
                     if filter_time_constant > 0:
                         alpha = 1 - np.exp(-dt / filter_time_constant)
@@ -159,8 +161,9 @@ def roller_actuator_rotation():
                     # print(speed)
                     if do_print:
                         temp0 = np.concatenate((accel, vel))
+                        
+                        temp1 = [angle, speed, left_w, right_w]
 
-                        temp1 = [angle, speed]
                         # temp = np.concatenate((temp0,temp1))
                         # printable = np.round(np.concatenate((temp, [speed])),3)
 
