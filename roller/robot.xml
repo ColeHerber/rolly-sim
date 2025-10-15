@@ -16,7 +16,7 @@
   </default>
   <worldbody>
     <!-- Link control -->
-    <body name="control" pos="0 0 -0.1" euler="0 0.0 1.5" childclass="roller">
+    <body name="control" pos="0 0 -0.22" euler="0 0.0 1.5" childclass="roller">
       <freejoint name="control_freejoint"/>
       <inertial pos="-0.0127 -5.50107e-05 -5.66234e-05" mass="0.091974" fullinertia="0.000228369 0.00011488 0.00011488 -6.9492e-21 1.08115e-39 -9.85277e-37"/>
       
@@ -217,20 +217,19 @@
     <material name="r_wheel_material" rgba="0 1 0 1"/>
   </asset>
      <actuator>
-<velocity class="roller" name="L1" joint="L1" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="R1" joint="R1" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="L2" joint="L2" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="R2" joint="R2" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="L3" joint="L3" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="R3" joint="R3" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="L4" joint="L4" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="R4" joint="R4" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="L5" joint="L5" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="R5" joint="R5" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="L6" joint="L6" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
-<velocity class="roller" name="R6" joint="R6" kv="1" ctrllimited="true" ctrlrange="-500 500" forcerange="-0.05 0.5"/>
+        <intvelocity class="roller" name="L1" joint="L1" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R1" joint="R1" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L2" joint="L2" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R2" joint="R2" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L3" joint="L3" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R3" joint="R3" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L4" joint="L4" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R4" joint="R4" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L5" joint="L5" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R5" joint="R5" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L6" joint="L6" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R6" joint="R6" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
     </actuator>
-
   <sensor>
     <accelerometer name="roller1_accel" site="roller1"/>
     <accelerometer name="roller2_accel" site="roller2"/>
@@ -259,6 +258,18 @@
     <jointvel name="L6_w" joint="L6"/>
     <jointvel name="R6_w" joint="R6"/>
 
+    <actuatorfrc name="L1_torque" actuator="L1"/>
+    <actuatorfrc name="R1_torque" actuator="R1"/>
+    <actuatorfrc name="L2_torque" actuator="L2"/>
+    <actuatorfrc name="R2_torque" actuator="R2"/>
+    <actuatorfrc name="L3_torque" actuator="L3"/>
+    <actuatorfrc name="R3_torque" actuator="R3"/>
+    <actuatorfrc name="L4_torque" actuator="L4"/>
+    <actuatorfrc name="R4_torque" actuator="R4"/>
+    <actuatorfrc name="L5_torque" actuator="L5"/>
+    <actuatorfrc name="R5_torque" actuator="R5"/>
+    <actuatorfrc name="L6_torque" actuator="L6"/>
+    <actuatorfrc name="R6_torque" actuator="R6"/>
 
     <velocimeter name="total_vel" site="control"/>
     <gyro name="total_ang" site="control"/>
