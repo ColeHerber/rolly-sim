@@ -2,10 +2,39 @@ import mujoco
 import numpy as np
 import time
 from mujoco.viewer import launch_passive
-# from scipy.spatial.transform import Rotation as R
 
 
 # Load the MuJoCo model
+def rotate_vector(v, axis, angle_deg):
+    """
+    Rotate vector v around 'axis' by angle_deg (degrees).
+    Uses Rodrigues' rotation formula. Works with 1D or Nx3 array v.
+    """
+    v = np.asarray(v, dtype=float)
+    axis = np.asarray(axis, dtype=float)
+
+    # normalize axis
+    norm = np.linalg.norm(axis)
+    if norm == 0:
+        raise ValueError("Axis must be non-zero.")
+    k = axis / norm
+
+    theta = np.deg2rad(angle_deg)
+    ct, st = np.cos(theta), np.sin(theta)
+
+    # skew-symmetric cross-product matrix of k
+    K = np.array([
+        [    0, -k[2],  k[1]],
+        [ k[2],     0, -k[0]],
+        [-k[1],  k[0],     0]
+    ])
+
+    # 3x3 rotation matrix
+    R = ct * np.eye(3) + st * K + (1 - ct) * np.outer(k, k)
+
+    # support single vector (3,) or batch (N,3)
+    return (R @ v) if v.ndim == 1 else (v @ R.T)
+
 
 def roller_actuator_rotation():
     """
@@ -43,14 +72,13 @@ def roller_actuator_rotation():
         }
 
         # grav = np.array([0,0,-9.81])
-        grav = np.array([0,0,-1])
+        grav = np.array([0,0,1])
 
         axis = np.array([1, 0, 0])  # rotate around X axis
         n = np.array([1,0,0])   # x-axis defines the "sign" direction
 
         # Create the rotation object
-        # r = R.from_rotvec(np.radians(angle_degrees) * axis)
-        # grav = r.apply(grav)
+        grav = rotate_vector(grav, axis, 45)   # rotate by 60 degrees
         print(grav)
 
         labels = [
@@ -63,14 +91,9 @@ def roller_actuator_rotation():
 
 
 
-
-        speed_target = 20
-        grav_percent = 10
-        vel_percent = -10
-        target_percent = -2
         do_print = False
-        startup_ramp_duration = 0.2  # seconds to blend control in; lower is snappier, 0 disables ramp
-        filter_time_constant = 0.000  # seconds; lower = quicker response, higher = smoother output
+        startup_ramp_duration = 0  # seconds to blend control in; lower is snappier, 0 disables ramp
+        filter_time_constant = 0  # seconds; lower = quicker response, higher = smoother output
         # Initialize the viewer
         with mujoco.viewer.launch_passive(model, data) as viewer:
 
@@ -115,10 +138,7 @@ def roller_actuator_rotation():
                 else:
                     do_print = False
 
-                ramp_scale = 1.0
-                if startup_ramp_duration > 0:
-                    ramp_elapsed = current_time - boot_time
-                    ramp_scale = np.clip(ramp_elapsed / startup_ramp_duration, 0.0, 1.0)
+                
 
                 for name, [L_id, R_id,sens_id, accel_name,vel_name, left_name, right_name, velocity] in bugs.items():
 
@@ -137,14 +157,14 @@ def roller_actuator_rotation():
                     # cross = np.cross(accel, grav)
                     angle = np.dot(accel, grav)
 
-                    # if angle >= -0.5:
-                    #     speed = 1
-                    # else:
-                    #     speed = -1                   # speed = (angle)/(np.pi)
+                    if angle < 0:
+                        ang_speed = 1
+                    else:
+                        ang_speed = 0.95                   # speed = (angle)/(np.pi)
                     speed_multiplier = 300
 
-                    speed = (1- angle+0.5)*speed_multiplier
-                    target_ctrl = np.float64(speed) * ramp_scale
+                    speed = ((ang_speed)*speed_multiplier)
+                    target_ctrl = np.float64(speed)
 
                     if filter_time_constant > 0:
                         alpha = 1 - np.exp(-dt / filter_time_constant)
@@ -193,7 +213,7 @@ def roller_actuator_rotation():
                 # if time_until_next_step > 0:
                 #     pass # You can add a sleep here if needed for real-time pacing,
                 #          # but viewer.sync() usually handles frame rate.
-                time.sleep(0.01)
+                time.sleep(0.0001)
                 pass
                 
     except Exception as e:
