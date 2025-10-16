@@ -6,349 +6,201 @@ from collections import deque
 import matplotlib.pyplot as plt
 
 
-def plot_sensor_history(torque_log, gyro_log):
-    """
-    Plot stored torque and gyro histories for each roller on exit.
-    Generates combined and separate plots for raw values and changes.
-    """
+def plot_sensor_history(torque_log, gyro_log, accel_log):
+    """Render history and change plots for torque, gyro, and acceleration sensors."""
     if not torque_log:
         return
 
     markers = ['o', 's', '^', 'd', 'v', 'P']
     color_cycle = plt.cm.get_cmap("tab10", max(len(torque_log), len(markers)))
 
-    torque_avg = {}
-    torque_delta = {}
-    gyro_mag = {}
-    gyro_delta = {}
+    torque_avg, torque_delta = {}, {}
+    gyro_mag, gyro_delta = {}, {}
+    accel_mag, accel_delta = {}, {}
 
-    sample_start = 30
+    sample_start = 200
     sample_end = 2500
 
-    def mask_by_threshold(values, factor=0):
-        if len(values) == 0:
-            return None
-        max_val = np.nanmax(values)
-        if not np.isfinite(max_val) or max_val <= 0:
-            return None
-        threshold = factor * max_val
-        mask = values >= threshold
-        if not np.any(mask):
-            return None
-        return np.where(mask, values, np.nan)
+    def _slice(arr):
+        return arr[sample_start:sample_end] if sample_end is not None else arr[sample_start:]
+
+    def high_pass(values, alpha=0.05):
+        if len(values) <= 1:
+            return np.zeros_like(values)
+        smooth = np.empty_like(values)
+        smooth[0] = values[0]
+        for i in range(1, len(values)):
+            smooth[i] = alpha * values[i] + (1 - alpha) * smooth[i - 1]
+        return np.clip(np.abs(values - smooth), 1e-9, None)
 
     for name, samples in torque_log.items():
         if not samples:
             continue
         avg_all = 0.5 * (np.array([left for left, _ in samples]) + np.array([right for _, right in samples]))
-        avg_vals = np.clip(avg_all[sample_start:sample_end], 1e-9, None)
+        avg_vals = np.clip(_slice(avg_all), 1e-9, None)
         torque_avg[name] = avg_vals
-        if len(avg_vals) > 1:
-            alpha_torque = 0.05
-            smooth = np.empty_like(avg_vals)
-            smooth[0] = avg_vals[0]
-            for i in range(1, len(avg_vals)):
-                smooth[i] = alpha_torque * avg_vals[i] + (1 - alpha_torque) * smooth[i - 1]
-            high_pass = np.clip(np.abs(avg_vals - smooth), 1e-9, None)
-        else:
-            high_pass = np.zeros_like(avg_vals)
-        torque_delta[name] = high_pass
+        torque_delta[name] = high_pass(avg_vals)
 
     for name, samples in gyro_log.items():
         if not samples:
             continue
         comp = np.array(samples, dtype=float)
-        mag_all = np.linalg.norm(comp, axis=1)
-        mag_vals = np.clip(mag_all[sample_start:sample_end], 1e-9, None)
+        mag_vals = np.clip(_slice(np.linalg.norm(comp, axis=1)), 1e-9, None)
         gyro_mag[name] = mag_vals
-        # High-pass filter: aggressive smoothing (low-pass) then subtract
-        if len(mag_vals) > 1:
-            alpha = 0.05
-            smooth = np.empty_like(mag_vals)
-            smooth[0] = mag_vals[0]
-            for i in range(1, len(mag_vals)):
-                smooth[i] = alpha * mag_vals[i] + (1 - alpha) * smooth[i - 1]
-            high_pass = np.clip(np.abs(mag_vals - smooth), 1e-9, None)
-        else:
-            high_pass = np.zeros_like(mag_vals)
-        gyro_delta[name] = high_pass
+        gyro_delta[name] = high_pass(mag_vals)
 
-    # Combined torque + gyro plot with dual y-axes
-    fig, ax_left = plt.subplots(figsize=(12, 7))
-    ax_right = ax_left.twinx()
-    left_handles = []
-    right_handles = []
-    for idx, name in enumerate(sorted(torque_log.keys())):
-        color = color_cycle(idx % color_cycle.N)
-        marker = markers[idx % len(markers)]
-        if name in gyro_mag:
-            x_vals = np.arange(sample_start, sample_start + len(gyro_mag[name]))
-            line_left, = ax_left.plot(
-                x_vals,
-                gyro_mag[name],
-                label=f"{name} gyro",
-                color=color,
-                linewidth=1.6,
-            )
-            left_handles.append(line_left)
-        if name in torque_avg:
-            x_vals = np.arange(sample_start, sample_start + len(torque_avg[name]))
-            line_right, = ax_right.plot(
-                x_vals,
-                torque_avg[name],
-                label=f"{name} torque",
-                color=color,
-                linestyle="--",
-                marker=marker,
-                markevery=[len(torque_avg[name]) - 1],
-                linewidth=1.5,
-            )
-            right_handles.append(line_right)
-    ax_left.set_title("Roller Gyro & Torque History")
-    ax_left.set_xlabel("Sample")
-    ax_left.set_ylabel("Gyro Magnitude (log scale)")
-    ax_right.set_ylabel("Torque (log scale)")
-    ax_left.set_yscale("log")
-    ax_right.set_yscale("log")
-    ax_left.grid(True, linestyle="--", alpha=0.3)
-    handles = left_handles + right_handles
-    labels = [h.get_label() for h in handles]
-    ax_left.legend(handles, labels, loc="lower left")
-    fig.tight_layout()
-    plt.savefig("torque_gyro_curve")
-    
+    for name, samples in accel_log.items():
+        if not samples:
+            continue
+        comp = np.array(samples, dtype=float)
+        mag_vals = np.clip(_slice(np.linalg.norm(comp, axis=1)), 1e-9, None)
+        accel_mag[name] = mag_vals
+        accel_delta[name] = high_pass(mag_vals)
 
-    # Combined change plot with dual y-axes
-    fig_delta, ax_delta_left = plt.subplots(figsize=(12, 7))
-    ax_delta_right = ax_delta_left.twinx()
-    left_handles = []
-    right_handles = []
-    for idx, name in enumerate(sorted(torque_log.keys())):
-        color = color_cycle(idx % color_cycle.N)
-        if name in gyro_delta:
-            masked_gyro = mask_by_threshold(gyro_delta[name])
-            if masked_gyro is not None:
-                x_vals = np.arange(sample_start, sample_start + len(masked_gyro))
-                line_left, = ax_delta_left.plot(
-                    x_vals,
-                    masked_gyro,
-                    label=f"{name} gyro Δ",
-                    color=color,
-                    linewidth=1.4,
-                )
+    def plot_dual_axis_pair(filename, title, left_label, left_data, right_label, right_data, left_linestyle='-', right_linestyle='--'):
+        fig, ax_left = plt.subplots(figsize=(12, 7))
+        ax_right = ax_left.twinx()
+        left_handles, right_handles = [], []
+        for idx, name in enumerate(sorted(torque_log.keys())):
+            color = color_cycle(idx % len(markers))
+            marker = markers[idx % len(markers)]
+            left_series = left_data.get(name)
+            if left_series is not None and len(left_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(left_series))
+                line_left, = ax_left.plot(x_vals, left_series, label=f"{name} {left_label}", color=color, linestyle=left_linestyle, linewidth=1.5)
                 left_handles.append(line_left)
-        if name in torque_delta:
-            masked_torque = mask_by_threshold(torque_delta[name])
-            if masked_torque is not None:
-                x_vals = np.arange(sample_start, sample_start + len(masked_torque))
-                line_right, = ax_delta_right.plot(
-                    x_vals,
-                    masked_torque,
-                    label=f"{name} torque Δ",
-                    color=color,
-                    linestyle="--",
-                    linewidth=1.4,
-                )
+            right_series = right_data.get(name)
+            if right_series is not None and len(right_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(right_series))
+                line_right, = ax_right.plot(x_vals, right_series, label=f"{name} {right_label}", color=color, linestyle=right_linestyle, marker=marker, markevery=[len(right_series) - 1], linewidth=1.5)
                 right_handles.append(line_right)
-    ax_delta_left.set_title("Change in Gyro & Torque Readings")
-    ax_delta_left.set_xlabel("Sample")
-    ax_delta_left.set_ylabel("Gyro Change (log scale)")
-    ax_delta_right.set_ylabel("Torque Change (log scale)")
-    ax_delta_left.set_yscale("log")
-    ax_delta_right.set_yscale("log")
-    ax_delta_left.grid(True, linestyle="--", alpha=0.3)
-    handles = left_handles + right_handles
-    labels = [h.get_label() for h in handles]
-    ax_delta_left.legend(handles, labels, loc="lower left")
-    fig_delta.tight_layout()
-    plt.savefig("torque_gyro_change")
-    
+        ax_left.set_title(title)
+        ax_left.set_xlabel("Sample")
+        ax_left.set_ylabel(f"{left_label} (log scale)")
+        ax_right.set_ylabel(f"{right_label} (log scale)")
+        ax_left.set_yscale("log")
+        ax_right.set_yscale("log")
+        ax_left.grid(True, linestyle="--", alpha=0.3)
+        handles = left_handles + right_handles
+        if handles:
+            ax_left.legend(handles, [h.get_label() for h in handles], loc="lower left")
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
 
-    # Stacked torque & gyro history plots
-    fig_stacked_hist, (ax_gyro_hist, ax_torque_hist) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
-    for idx, name in enumerate(sorted(torque_log.keys())):
-        color = color_cycle(idx % color_cycle.N)
-        marker = markers[idx % len(markers)]
-        if name in gyro_mag:
-            x_vals = np.arange(sample_start, sample_start + len(gyro_mag[name]))
-            ax_gyro_hist.plot(
-                x_vals,
-                gyro_mag[name],
-                label=f"{name} gyro",
-                color=color,
-                linewidth=1.6,
-            )
-        if name in torque_avg:
-            x_vals = np.arange(sample_start, sample_start + len(torque_avg[name]))
-            ax_torque_hist.plot(
-                x_vals,
-                torque_avg[name],
-                label=f"{name} torque",
-                color=color,
-                linestyle="--",
-                marker=marker,
-                markevery=[len(torque_avg[name]) - 1],
-                linewidth=1.5,
-            )
-    ax_gyro_hist.set_title("Gyro Magnitude (Log Scale)")
-    ax_gyro_hist.set_ylabel("Gyro Magnitude")
-    ax_gyro_hist.set_yscale("log")
-    ax_gyro_hist.grid(True, linestyle="--", alpha=0.3)
-    ax_gyro_hist.legend(loc="lower left")
+    def plot_stacked_pair(filename, top_title, top_ylabel, top_data, bottom_title, bottom_ylabel, bottom_data, top_linestyle='-', bottom_linestyle='--'):
+        fig, (ax_top, ax_bottom) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+        for idx, name in enumerate(sorted(torque_log.keys())):
+            color = color_cycle(idx % len(markers))
+            top_series = top_data.get(name)
+            if top_series is not None and len(top_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(top_series))
+                ax_top.plot(x_vals, top_series, label=f"{name}", color=color, linestyle=top_linestyle, linewidth=1.6)
+            bottom_series = bottom_data.get(name)
+            if bottom_series is not None and len(bottom_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(bottom_series))
+                ax_bottom.plot(x_vals, bottom_series, label=f"{name}", color=color, linestyle=bottom_linestyle, linewidth=1.4)
+        ax_top.set_title(top_title)
+        ax_top.set_ylabel(top_ylabel)
+        ax_top.set_yscale("log")
+        ax_top.grid(True, linestyle="--", alpha=0.3)
+        ax_top.legend(loc="lower left")
+        ax_bottom.set_title(bottom_title)
+        ax_bottom.set_xlabel("Sample")
+        ax_bottom.set_ylabel(bottom_ylabel)
+        ax_bottom.set_yscale("log")
+        ax_bottom.grid(True, linestyle="--", alpha=0.3)
+        ax_bottom.legend(loc="lower left")
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
 
-    ax_torque_hist.set_title("Torque (Log Scale)")
-    ax_torque_hist.set_xlabel("Sample")
-    ax_torque_hist.set_ylabel("Torque")
-    ax_torque_hist.set_yscale("log")
-    ax_torque_hist.grid(True, linestyle="--", alpha=0.3)
-    ax_torque_hist.legend(loc="lower left")
+    def plot_stacked_triple(filename, titles, ylabels, data_series, linestyles):
+        fig, axes = plt.subplots(3, 1, figsize=(12, 12), sharex=True)
+        for ax, title, ylabel, data_dict, linestyle in zip(axes, titles, ylabels, data_series, linestyles):
+            for idx, name in enumerate(sorted(torque_log.keys())):
+                color = color_cycle(idx % len(markers))
+                series = data_dict.get(name)
+                if series is not None and len(series) > 0:
+                    x_vals = np.arange(sample_start, sample_start + len(series))
+                    ax.plot(x_vals, series, label=f"{name}", color=color, linestyle=linestyle, linewidth=1.5)
+            ax.set_title(title)
+            ax.set_ylabel(ylabel)
+            ax.set_yscale("log")
+            ax.grid(True, linestyle="--", alpha=0.3)
+            ax.legend(loc="lower left")
+        axes[-1].set_xlabel("Sample")
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
 
-    fig_stacked_hist.tight_layout()
-    plt.savefig("torque_gyro_stacked_curve")
-    
+    def plot_single(filename, title, ylabel, data_dict, linestyle='-'):
+        fig, ax = plt.subplots(figsize=(12, 7))
+        for idx, name in enumerate(sorted(data_dict.keys())):
+            series = data_dict[name]
+            if series is None or len(series) == 0:
+                continue
+            color = color_cycle(idx % len(markers))
+            marker = markers[idx % len(markers)]
+            x_vals = np.arange(sample_start, sample_start + len(series))
+            ax.plot(x_vals, series, label=name, color=color, linestyle=linestyle, marker=marker, markevery=[len(series) - 1], linewidth=1.75)
+        ax.set_title(title)
+        ax.set_xlabel("Sample")
+        ax.set_ylabel(ylabel)
+        ax.set_yscale("log")
+        ax.grid(True, linestyle="--", alpha=0.3)
+        ax.legend(loc="lower left")
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
 
-    # Torque-only plot
-    fig_torque, ax_torque = plt.subplots(figsize=(12, 7))
-    for idx, name in enumerate(sorted(torque_avg.keys())):
-        marker = markers[idx % len(markers)]
-        color = color_cycle(idx % color_cycle.N)
-        x_vals = np.arange(sample_start, sample_start + len(torque_avg[name]))
-        ax_torque.plot(
-            x_vals,
-            torque_avg[name],
-            label=name,
-            color=color,
-            marker=marker,
-            markevery=[len(torque_avg[name]) - 1],
-            linewidth=1.75,
-        )
-    ax_torque.set_title("Roller Torque History (Average Left/Right)")
-    ax_torque.set_xlabel("Sample")
-    ax_torque.set_ylabel("Torque (log scale)")
-    ax_torque.set_yscale("log")
-    ax_torque.legend(loc="lower left")
-    ax_torque.grid(True, linestyle="--", alpha=0.3)
-    fig_torque.tight_layout()
-    plt.savefig("torque_curve_only")
-    
+    # Pairwise dual-axis history plots
+    plot_dual_axis_pair("torque_gyro_curve", "Torque vs Gyro History", "Gyro Magnitude", gyro_mag, "Torque", torque_avg)
+    plot_dual_axis_pair("torque_accel_curve", "Torque vs Accel History", "Accel Magnitude", accel_mag, "Torque", torque_avg, left_linestyle=':', right_linestyle='--')
+    plot_dual_axis_pair("gyro_accel_curve", "Gyro vs Accel History", "Gyro Magnitude", gyro_mag, "Accel Magnitude", accel_mag, left_linestyle='-', right_linestyle=':')
 
-    # Torque change plot
-    fig_torque_delta, ax_torque_delta = plt.subplots(figsize=(12, 7))
-    for idx, name in enumerate(sorted(torque_delta.keys())):
-        color = color_cycle(idx % color_cycle.N)
-        masked = mask_by_threshold(torque_delta[name])
-        if masked is not None:
-            x_vals = np.arange(sample_start, sample_start + len(masked))
-            ax_torque_delta.plot(
-                x_vals,
-                masked,
-                label=name,
-                color=color,
-                linewidth=1.5,
-            )
-    ax_torque_delta.set_title("Change in Roller Torque (High-Pass)")
-    ax_torque_delta.set_xlabel("Sample")
-    ax_torque_delta.set_ylabel("Torque Change (log scale)")
-    ax_torque_delta.set_yscale("log")
-    ax_torque_delta.legend(loc="lower left")
-    ax_torque_delta.grid(True, linestyle="--", alpha=0.3)
-    fig_torque_delta.tight_layout()
-    plt.savefig("torque_change_only")
-    
+    # Pairwise dual-axis change plots
+    plot_dual_axis_pair("torque_gyro_change", "Torque vs Gyro Change", "Gyro Change", gyro_delta, "Torque Change", torque_delta)
+    plot_dual_axis_pair("torque_accel_change", "Torque vs Accel Change", "Accel Change", accel_delta, "Torque Change", torque_delta, left_linestyle=':', right_linestyle='--')
+    plot_dual_axis_pair("gyro_accel_change", "Gyro vs Accel Change", "Gyro Change", gyro_delta, "Accel Change", accel_delta, left_linestyle='-', right_linestyle=':')
 
-    # Stacked torque & gyro change plots
-    fig_stacked_delta, (ax_gyro_delta_top, ax_torque_delta_bottom) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
-    for idx, name in enumerate(sorted(torque_log.keys())):
-        color = color_cycle(idx % color_cycle.N)
-        if name in gyro_delta:
-            masked_gyro = mask_by_threshold(gyro_delta[name])
-            if masked_gyro is not None:
-                x_vals = np.arange(sample_start, sample_start + len(masked_gyro))
-                ax_gyro_delta_top.plot(
-                    x_vals,
-                    masked_gyro,
-                    label=f"{name} gyro Δ",
-                    color=color,
-                    linewidth=1.5,
-                )
-        if name in torque_delta:
-            masked_torque = mask_by_threshold(torque_delta[name])
-            if masked_torque is not None:
-                x_vals = np.arange(sample_start, sample_start + len(masked_torque))
-                ax_torque_delta_bottom.plot(
-                    x_vals,
-                    masked_torque,
-                    label=f"{name} torque Δ",
-                    color=color,
-                    linestyle="--",
-                    linewidth=1.5,
-                )
-    ax_gyro_delta_top.set_title("Gyro Change (High-Pass, Log Scale)")
-    ax_gyro_delta_top.set_ylabel("Gyro Change")
-    ax_gyro_delta_top.set_yscale("log")
-    ax_gyro_delta_top.grid(True, linestyle="--", alpha=0.3)
-    ax_gyro_delta_top.legend(loc="lower left")
+    # Pairwise stacked history plots
+    plot_stacked_pair("torque_gyro_stacked_curve", "Gyro Magnitude (Log Scale)", "Gyro Magnitude", gyro_mag, "Torque (Log Scale)", "Torque", torque_avg)
+    plot_stacked_pair("torque_accel_stacked_curve", "Acceleration Magnitude (Log Scale)", "Accel Magnitude", accel_mag, "Torque (Log Scale)", "Torque", torque_avg, top_linestyle=':', bottom_linestyle='--')
+    plot_stacked_pair("gyro_accel_stacked_curve", "Gyro Magnitude (Log Scale)", "Gyro Magnitude", gyro_mag, "Acceleration Magnitude (Log Scale)", "Accel Magnitude", accel_mag, top_linestyle='-', bottom_linestyle=':')
 
-    ax_torque_delta_bottom.set_title("Torque Change (High-Pass, Log Scale)")
-    ax_torque_delta_bottom.set_xlabel("Sample")
-    ax_torque_delta_bottom.set_ylabel("Torque Change")
-    ax_torque_delta_bottom.set_yscale("log")
-    ax_torque_delta_bottom.grid(True, linestyle="--", alpha=0.3)
-    ax_torque_delta_bottom.legend(loc="lower left")
+    # Pairwise stacked change plots
+    plot_stacked_pair("torque_gyro_stacked_change", "Gyro Change (High-Pass, Log Scale)", "Gyro Change", gyro_delta, "Torque Change (High-Pass, Log Scale)", "Torque Change", torque_delta)
+    plot_stacked_pair("torque_accel_stacked_change", "Accel Change (High-Pass, Log Scale)", "Accel Change", accel_delta, "Torque Change (High-Pass, Log Scale)", "Torque Change", torque_delta, top_linestyle=':', bottom_linestyle='--')
+    plot_stacked_pair("gyro_accel_stacked_change", "Gyro Change (High-Pass, Log Scale)", "Gyro Change", gyro_delta, "Acceleration Change (High-Pass, Log Scale)", "Accel Change", accel_delta, top_linestyle='-', bottom_linestyle=':')
 
-    fig_stacked_delta.tight_layout()
-    plt.savefig("torque_gyro_stacked_change")
-    
+    # Triple stacked plots (all sensors)
+    plot_stacked_triple(
+        "torque_gyro_accel_stacked_curve",
+        ["Gyro Magnitude (Log Scale)", "Torque (Log Scale)", "Acceleration Magnitude (Log Scale)"],
+        ["Gyro Magnitude", "Torque", "Accel Magnitude"],
+        [gyro_mag, torque_avg, accel_mag],
+        ['-', '--', ':']
+    )
+    plot_stacked_triple(
+        "torque_gyro_accel_stacked_change",
+        ["Gyro Change (High-Pass, Log Scale)", "Torque Change (High-Pass, Log Scale)", "Acceleration Change (High-Pass, Log Scale)"],
+        ["Gyro Change", "Torque Change", "Accel Change"],
+        [gyro_delta, torque_delta, accel_delta],
+        ['-', '--', ':']
+    )
 
-    # Gyro-only plot
-    fig_gyro, ax_gyro = plt.subplots(figsize=(12, 7))
-    for idx, name in enumerate(sorted(gyro_mag.keys())):
-        marker = markers[idx % len(markers)]
-        color = color_cycle(idx % color_cycle.N)
-        x_vals = np.arange(sample_start, sample_start + len(gyro_mag[name]))
-        ax_gyro.plot(
-            x_vals,
-            gyro_mag[name],
-            label=name,
-            color=color,
-            marker=marker,
-            markevery=[len(gyro_mag[name]) - 1],
-            linewidth=1.75,
-        )
-    ax_gyro.set_title("Roller Gyro History (Magnitude)")
-    ax_gyro.set_xlabel("Sample")
-    ax_gyro.set_ylabel("Gyro Magnitude (log scale)")
-    ax_gyro.set_yscale("log")
-    ax_gyro.legend(loc="lower left")
-    ax_gyro.grid(True, linestyle="--", alpha=0.3)
-    fig_gyro.tight_layout()
-    plt.savefig("gyro_curve_only")
-    
+    # Single-sensor history plots
+    plot_single("torque_curve_only", "Roller Torque History (Average Left/Right)", "Torque (log scale)", torque_avg, linestyle='--')
+    plot_single("gyro_curve_only", "Roller Gyro History (Magnitude)", "Gyro Magnitude (log scale)", gyro_mag)
+    plot_single("accel_curve_only", "Roller Acceleration History (Magnitude)", "Acceleration (log scale)", accel_mag, linestyle=':')
 
-    # Gyro change plot
-    fig_gyro_delta, ax_gyro_delta = plt.subplots(figsize=(12, 7))
-    for idx, name in enumerate(sorted(gyro_delta.keys())):
-        color = color_cycle(idx % color_cycle.N)
-        masked = mask_by_threshold(gyro_delta[name])
-        if masked is not None:
-            x_vals = np.arange(sample_start, sample_start + len(masked))
-            ax_gyro_delta.plot(
-                x_vals,
-                masked,
-                label=name,
-                color=color,
-                linewidth=1.5,
-            )
-    ax_gyro_delta.set_title("Change in Roller Gyro Magnitude")
-    ax_gyro_delta.set_xlabel("Sample")
-    ax_gyro_delta.set_ylabel("Gyro Change (log scale)")
-    ax_gyro_delta.set_yscale("log")
-    ax_gyro_delta.legend(loc="lower left")
-    ax_gyro_delta.grid(True, linestyle="--", alpha=0.3)
-    fig_gyro_delta.tight_layout()
-    plt.savefig("gyro_change_only")
-    
+    # Single-sensor change plots
+    plot_single("torque_change_only", "Change in Roller Torque (High-Pass)", "Torque Change (log scale)", torque_delta, linestyle='--')
+    plot_single("gyro_change_only", "Change in Roller Gyro Magnitude", "Gyro Change (log scale)", gyro_delta)
+    plot_single("accel_change_only", "Change in Roller Acceleration Magnitude", "Acceleration Change (log scale)", accel_delta, linestyle=':')
 
+    # Individual plots generated via helper routines above
 
 def roller_actuator_rotation():
     """
@@ -388,6 +240,7 @@ def roller_actuator_rotation():
         }
         torque_log = {name: [] for name in bugs}
         gyro_log = {name: [] for name in bugs}
+        accel_log = {name: [] for name in bugs}
 
         grav = np.array([0,0,1])
 
@@ -449,19 +302,24 @@ def roller_actuator_rotation():
 
                     for name, [L_id, R_id,sens_id, accel_name,vel_name, left_name, right_name, velocity, left_torque_name, right_torque_name, commands, torques] in bugs.items():
 
-                        accel = data.sensor(accel_name).data
-                        vel = data.sensor(vel_name).data
+                        accel_vec = np.array(data.sensor(accel_name).data, dtype=float)
+                        gyro_vec = np.array(data.sensor(vel_name).data, dtype=float)
                         left_w = float(data.sensor(left_name).data[0])
                         right_w = float(data.sensor(right_name).data[0])
                         left_tau = float(data.sensor(left_torque_name).data[0])
                         right_tau = float(data.sensor(right_torque_name).data[0])
                         avg_tau = 0.5 * (left_tau + right_tau)
                         torque_log[name].append((left_tau, right_tau))
-                        gyro_log[name].append(tuple(vel))
+                        gyro_log[name].append(gyro_vec)
+                        accel_log[name].append(accel_vec)
                         command = commands[current_pos]
-                        
-                        vel = data.sensor(vel_name).data
-                        accel = accel/np.linalg.norm(accel)
+
+                        accel_norm = np.linalg.norm(accel_vec)
+                        if accel_norm > 0:
+                            accel = accel_vec / accel_norm
+                        else:
+                            accel = accel_vec
+                        vel = gyro_vec
                         angle = np.dot(accel, grav)
 
                         base_speed = 150/5
@@ -504,7 +362,7 @@ def roller_actuator_rotation():
                     # time.sleep(0.01)
                     pass
         finally:
-            plot_sensor_history(torque_log, gyro_log)
+            plot_sensor_history(torque_log, gyro_log, accel_log)
             
     except Exception as e:
         print(f"An error occurred during roller: {e}")
