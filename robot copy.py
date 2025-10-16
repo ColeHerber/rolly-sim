@@ -22,10 +22,10 @@ def plot_sensor_history(torque_log, gyro_log):
     gyro_mag = {}
     gyro_delta = {}
 
-    sample_start = 200
-    sample_end = 2000
+    sample_start = 30
+    sample_end = 2500
 
-    def mask_by_threshold(values, factor=0.5):
+    def mask_by_threshold(values, factor=0):
         if len(values) == 0:
             return None
         max_val = np.nanmax(values)
@@ -501,7 +501,7 @@ def roller_actuator_rotation():
                     viewer.sync()
 
                 
-                    # time.sleep(0.001)
+                    time.sleep(0.001)
                     pass
         finally:
             plot_sensor_history(torque_log, gyro_log)
