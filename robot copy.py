@@ -18,8 +18,8 @@ def plot_sensor_history(torque_log, gyro_log, accel_log):
     gyro_mag, gyro_delta = {}, {}
     accel_mag, accel_delta = {}, {}
 
-    sample_start = 200
-    sample_end = 2500
+    sample_start = 0
+    sample_end = 1000
 
     def _slice(arr):
         return arr[sample_start:sample_end] if sample_end is not None else arr[sample_start:]
@@ -322,7 +322,7 @@ def roller_actuator_rotation():
                         vel = gyro_vec
                         angle = np.dot(accel, grav)
 
-                        base_speed = 50/5
+                        base_speed = 300/5
                         
 
                         speed = base_speed * command
@@ -359,7 +359,7 @@ def roller_actuator_rotation():
                     viewer.sync()
 
                 
-                    time.sleep(0.01)
+                    time.sleep(0.001)
                     pass
         finally:
             plot_sensor_history(torque_log, gyro_log, accel_log)
