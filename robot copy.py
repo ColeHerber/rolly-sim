@@ -155,35 +155,35 @@ def plot_sensor_history(torque_log, gyro_log, accel_log):
         plt.close(fig)
 
     # Pairwise dual-axis history plots
-    plot_dual_axis_pair("torque_gyro_curve", "Torque vs Gyro History", "Gyro Magnitude", gyro_mag, "Torque", torque_avg)
-    plot_dual_axis_pair("torque_accel_curve", "Torque vs Accel History", "Accel Magnitude", accel_mag, "Torque", torque_avg, left_linestyle=':', right_linestyle='--')
-    plot_dual_axis_pair("gyro_accel_curve", "Gyro vs Accel History", "Gyro Magnitude", gyro_mag, "Accel Magnitude", accel_mag, left_linestyle='-', right_linestyle=':')
+    plot_dual_axis_pair("graphics/torque_gyro_curve", "Torque vs Gyro History", "Gyro Magnitude", gyro_mag, "Torque", torque_avg)
+    plot_dual_axis_pair("graphics/torque_accel_curve", "Torque vs Accel History", "Accel Magnitude", accel_mag, "Torque", torque_avg, left_linestyle=':', right_linestyle='--')
+    plot_dual_axis_pair("graphics/gyro_accel_curve", "Gyro vs Accel History", "Gyro Magnitude", gyro_mag, "Accel Magnitude", accel_mag, left_linestyle='-', right_linestyle=':')
 
     # Pairwise dual-axis change plots
-    plot_dual_axis_pair("torque_gyro_change", "Torque vs Gyro Change", "Gyro Change", gyro_delta, "Torque Change", torque_delta)
-    plot_dual_axis_pair("torque_accel_change", "Torque vs Accel Change", "Accel Change", accel_delta, "Torque Change", torque_delta, left_linestyle=':', right_linestyle='--')
-    plot_dual_axis_pair("gyro_accel_change", "Gyro vs Accel Change", "Gyro Change", gyro_delta, "Accel Change", accel_delta, left_linestyle='-', right_linestyle=':')
+    plot_dual_axis_pair("graphics/torque_gyro_change", "Torque vs Gyro Change", "Gyro Change", gyro_delta, "Torque Change", torque_delta)
+    plot_dual_axis_pair("graphics/torque_accel_change", "Torque vs Accel Change", "Accel Change", accel_delta, "Torque Change", torque_delta, left_linestyle=':', right_linestyle='--')
+    plot_dual_axis_pair("graphics/gyro_accel_change", "Gyro vs Accel Change", "Gyro Change", gyro_delta, "Accel Change", accel_delta, left_linestyle='-', right_linestyle=':')
 
     # Pairwise stacked history plots
-    plot_stacked_pair("torque_gyro_stacked_curve", "Gyro Magnitude (Log Scale)", "Gyro Magnitude", gyro_mag, "Torque (Log Scale)", "Torque", torque_avg)
-    plot_stacked_pair("torque_accel_stacked_curve", "Acceleration Magnitude (Log Scale)", "Accel Magnitude", accel_mag, "Torque (Log Scale)", "Torque", torque_avg, top_linestyle=':', bottom_linestyle='--')
-    plot_stacked_pair("gyro_accel_stacked_curve", "Gyro Magnitude (Log Scale)", "Gyro Magnitude", gyro_mag, "Acceleration Magnitude (Log Scale)", "Accel Magnitude", accel_mag, top_linestyle='-', bottom_linestyle=':')
+    plot_stacked_pair("graphics/torque_gyro_stacked_curve", "Gyro Magnitude (Log Scale)", "Gyro Magnitude", gyro_mag, "Torque (Log Scale)", "Torque", torque_avg)
+    plot_stacked_pair("graphics/torque_accel_stacked_curve", "Acceleration Magnitude (Log Scale)", "Accel Magnitude", accel_mag, "Torque (Log Scale)", "Torque", torque_avg, top_linestyle=':', bottom_linestyle='--')
+    plot_stacked_pair("graphics/gyro_accel_stacked_curve", "Gyro Magnitude (Log Scale)", "Gyro Magnitude", gyro_mag, "Acceleration Magnitude (Log Scale)", "Accel Magnitude", accel_mag, top_linestyle='-', bottom_linestyle=':')
 
     # Pairwise stacked change plots
-    plot_stacked_pair("torque_gyro_stacked_change", "Gyro Change (High-Pass, Log Scale)", "Gyro Change", gyro_delta, "Torque Change (High-Pass, Log Scale)", "Torque Change", torque_delta)
-    plot_stacked_pair("torque_accel_stacked_change", "Accel Change (High-Pass, Log Scale)", "Accel Change", accel_delta, "Torque Change (High-Pass, Log Scale)", "Torque Change", torque_delta, top_linestyle=':', bottom_linestyle='--')
-    plot_stacked_pair("gyro_accel_stacked_change", "Gyro Change (High-Pass, Log Scale)", "Gyro Change", gyro_delta, "Acceleration Change (High-Pass, Log Scale)", "Accel Change", accel_delta, top_linestyle='-', bottom_linestyle=':')
+    plot_stacked_pair("graphics/torque_gyro_stacked_change", "Gyro Change (High-Pass, Log Scale)", "Gyro Change", gyro_delta, "Torque Change (High-Pass, Log Scale)", "Torque Change", torque_delta)
+    plot_stacked_pair("graphics/torque_accel_stacked_change", "Accel Change (High-Pass, Log Scale)", "Accel Change", accel_delta, "Torque Change (High-Pass, Log Scale)", "Torque Change", torque_delta, top_linestyle=':', bottom_linestyle='--')
+    plot_stacked_pair("graphics/gyro_accel_stacked_change", "Gyro Change (High-Pass, Log Scale)", "Gyro Change", gyro_delta, "Acceleration Change (High-Pass, Log Scale)", "Accel Change", accel_delta, top_linestyle='-', bottom_linestyle=':')
 
     # Triple stacked plots (all sensors)
     plot_stacked_triple(
-        "torque_gyro_accel_stacked_curve",
+        "graphics/torque_gyro_accel_stacked_curve",
         ["Gyro Magnitude (Log Scale)", "Torque (Log Scale)", "Acceleration Magnitude (Log Scale)"],
         ["Gyro Magnitude", "Torque", "Accel Magnitude"],
         [gyro_mag, torque_avg, accel_mag],
         ['-', '--', ':']
     )
     plot_stacked_triple(
-        "torque_gyro_accel_stacked_change",
+        "graphics/torque_gyro_accel_stacked_change",
         ["Gyro Change (High-Pass, Log Scale)", "Torque Change (High-Pass, Log Scale)", "Acceleration Change (High-Pass, Log Scale)"],
         ["Gyro Change", "Torque Change", "Accel Change"],
         [gyro_delta, torque_delta, accel_delta],
@@ -191,14 +191,14 @@ def plot_sensor_history(torque_log, gyro_log, accel_log):
     )
 
     # Single-sensor history plots
-    plot_single("torque_curve_only", "Roller Torque History (Average Left/Right)", "Torque (log scale)", torque_avg, linestyle='--')
-    plot_single("gyro_curve_only", "Roller Gyro History (Magnitude)", "Gyro Magnitude (log scale)", gyro_mag)
-    plot_single("accel_curve_only", "Roller Acceleration History (Magnitude)", "Acceleration (log scale)", accel_mag, linestyle=':')
+    plot_single("graphics/torque_curve_only", "Roller Torque History (Average Left/Right)", "Torque (log scale)", torque_avg, linestyle='--')
+    plot_single("graphics/gyro_curve_only", "Roller Gyro History (Magnitude)", "Gyro Magnitude (log scale)", gyro_mag)
+    plot_single("graphics/accel_curve_only", "Roller Acceleration History (Magnitude)", "Acceleration (log scale)", accel_mag, linestyle=':')
 
     # Single-sensor change plots
-    plot_single("torque_change_only", "Change in Roller Torque (High-Pass)", "Torque Change (log scale)", torque_delta, linestyle='--')
-    plot_single("gyro_change_only", "Change in Roller Gyro Magnitude", "Gyro Change (log scale)", gyro_delta)
-    plot_single("accel_change_only", "Change in Roller Acceleration Magnitude", "Acceleration Change (log scale)", accel_delta, linestyle=':')
+    plot_single("graphics/torque_change_only", "Change in Roller Torque (High-Pass)", "Torque Change (log scale)", torque_delta, linestyle='--')
+    plot_single("graphics/gyro_change_only", "Change in Roller Gyro Magnitude", "Gyro Change (log scale)", gyro_delta)
+    plot_single("graphics/accel_change_only", "Change in Roller Acceleration Magnitude", "Acceleration Change (log scale)", accel_delta, linestyle=':')
 
     # Individual plots generated via helper routines above
 
@@ -322,7 +322,7 @@ def roller_actuator_rotation():
                         vel = gyro_vec
                         angle = np.dot(accel, grav)
 
-                        base_speed = 150/5
+                        base_speed = 50/5
                         
 
                         speed = base_speed * command
@@ -359,7 +359,7 @@ def roller_actuator_rotation():
                     viewer.sync()
 
                 
-                    # time.sleep(0.01)
+                    time.sleep(0.01)
                     pass
         finally:
             plot_sensor_history(torque_log, gyro_log, accel_log)

@@ -5,7 +5,7 @@
   <compiler angle="radian" meshdir="assets" autolimits="true"/>
   <default>
     <default class="roller">
-      <joint frictionloss="0.1" armature="0.005"/>
+      <joint frictionloss="0.01" armature="0.005"/>
       <default class="visual">
         <geom type="mesh" contype="0" conaffinity="0" group="2"/>
       </default>
@@ -16,11 +16,12 @@
   </default>
   <worldbody>
     <!-- Link control -->
-    <body name="control" pos="0 0 -0.1" euler="0 0.5 1.5" childclass="roller">
+    <body name="control" pos="0 0 -0.22" euler="0 0.0 1.5" childclass="roller">
       <freejoint name="control_freejoint"/>
-      <inertial pos="-0.0127 -5.50107e-05 -5.66234e-05" mass="0.091974" fullinertia="0.000228369 0.00011488 0.00011488 -6.9492e-21 1.34665e-65 -9.85273e-37"/>
+      <inertial pos="-0.0127 -5.50107e-05 -5.66234e-05" mass="0.091974" fullinertia="0.000228369 0.00011488 0.00011488 -6.9492e-21 1.08115e-39 -9.85277e-37"/>
       
-      <site group="3" name="control" pos="0 0 0" quat="1 0 0 0"/>
+            <site group="3" name="control" pos="0 0 0" quat="1 0 0 0"/>
+
       <!-- Part control -->
       <geom type="mesh" class="visual" pos="-0.0127 -5.50107e-05 -5.66234e-05" quat="1 0 0 0" mesh="control" material="control_material"/>
       <geom type="mesh" class="collision" pos="-0.0127 -5.50107e-05 -5.66234e-05" quat="1 0 0 0" mesh="control" material="control_material"/>
@@ -31,7 +32,7 @@
       <body name="center" pos="-0.0127 -5.50107e-05 0.0527434" quat="0.5 0.5 0.5 0.5">
         <!-- Joint from control to center -->
         <!-- Joint is "fixed", skipping it -->
-        <inertial pos="1.04779e-18 6.93889e-18 2.50049e-50" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 0 -5.13333e-37 0"/>
+        <inertial pos="1.04779e-18 0 2.50049e-50" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 0 -5.13333e-37 0"/>
         <!-- Part center -->
         <geom type="mesh" class="visual" pos="3.07642e-18 -0.0528 0" quat="0.5 -0.5 -0.5 -0.5" mesh="center" material="center_material"/>
         <geom type="mesh" class="collision" pos="3.07642e-18 -0.0528 0" quat="0.5 -0.5 -0.5 -0.5" mesh="center" material="center_material"/>
@@ -41,7 +42,7 @@
         <body name="l_wheel" pos="7.45389e-19 0 -0.0381" quat="0.707107 0 1.11022e-16 0.707107">
           <!-- Joint from center to l_wheel -->
           <joint axis="0 0 1" name="L1" type="hinge"/>
-          <inertial pos="6.6074e-18 6.93889e-18 -0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 0 0 6.0856e-54"/>
+          <inertial pos="6.6074e-18 0 -0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 0 0 1.23917e-53"/>
           <!-- Part l_wheel -->
           <geom type="mesh" class="visual" pos="6.93889e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
           <geom type="mesh" class="collision" pos="6.93889e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
@@ -50,7 +51,7 @@
         <body name="r_wheel" pos="1.34848e-18 0 0.0381" quat="1 -0 -0 0">
           <!-- Joint from center to r_wheel -->
           <joint axis="0 0 1" name="R1" type="hinge"/>
-          <inertial pos="-6.93889e-18 -5.17685e-18 0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 7.47578e-38 3.55324e-22 3.55324e-22"/>
+          <inertial pos="0 -5.17685e-18 0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 2.05252e-37 7.23523e-22 7.23523e-22"/>
           <!-- Part r_wheel -->
           <geom type="mesh" class="visual" pos="0.0528 -1.38778e-17 -0.0381" quat="0.707107 -6.49467e-17 -0.707107 5.48114e-17" mesh="r_wheel" material="r_wheel_material"/>
           <geom type="mesh" class="collision" pos="0.0528 -1.38778e-17 -0.0381" quat="0.707107 -6.49467e-17 -0.707107 5.48114e-17" mesh="r_wheel" material="r_wheel_material"/>
@@ -60,7 +61,7 @@
       <body name="center_2" pos="-0.0127 0.0456711 0.0263434" quat="0.5 0.5 0.5 0.5">
         <!-- Joint from control to center_2 -->
         <!-- Joint is "fixed", skipping it -->
-        <inertial pos="6.93889e-18 3.46945e-18 3.84346e-34" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 0 1.4377e-37 2.23364e-37"/>
+        <inertial pos="0 0 3.84346e-34" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 0 1.4377e-37 2.23364e-37"/>
         <!-- Part center_2 -->
         <geom type="mesh" class="visual" pos="-0.0457261 -0.0264 0" quat="0.183013 -0.683013 -0.183013 -0.683013" mesh="center" material="center_material"/>
         <geom type="mesh" class="collision" pos="-0.0457261 -0.0264 0" quat="0.183013 -0.683013 -0.183013 -0.683013" mesh="center" material="center_material"/>
@@ -70,7 +71,7 @@
         <body name="l_wheel_2" pos="6.93889e-18 6.93889e-18 -0.0381" quat="0.707107 0 1.11022e-16 0.707107">
           <!-- Joint from center_2 to l_wheel_2 -->
           <joint axis="0 0 1" name="L2" type="hinge"/>
-          <inertial pos="-3.31489e-19 6.93889e-18 -0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 0 0 6.0856e-54"/>
+          <inertial pos="-3.31489e-19 0 -0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 0 0 1.23917e-53"/>
           <!-- Part l_wheel_2 -->
           <geom type="mesh" class="visual" pos="0 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
           <geom type="mesh" class="collision" pos="0 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
@@ -79,7 +80,7 @@
         <body name="r_wheel_2" pos="-6.93889e-18 -3.46945e-18 0.0381" quat="0.866025 0 -2.22045e-16 -0.5">
           <!-- Joint from center_2 to r_wheel_2 -->
           <joint axis="0 0 1" name="R2" type="hinge"/>
-          <inertial pos="1.04083e-17 6.93889e-18 0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 -4.88457e-22 -1.30058e-22 4.85382e-22"/>
+          <inertial pos="1.38778e-17 1.38778e-17 0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 -1.71391e-21 -2.64828e-22 9.8835e-22"/>
           <!-- Part r_wheel_2 -->
           <geom type="mesh" class="visual" pos="0.0264 0.0457261 -0.0381" quat="0.612372 0.353553 -0.612372 0.353553" mesh="r_wheel" material="r_wheel_material"/>
           <geom type="mesh" class="collision" pos="0.0264 0.0457261 -0.0381" quat="0.612372 0.353553 -0.612372 0.353553" mesh="r_wheel" material="r_wheel_material"/>
@@ -89,7 +90,7 @@
       <body name="center_3" pos="-0.0127 0.0456711 -0.0264566" quat="0.183013 0.683013 -0.183013 -0.683013">
         <!-- Joint from control to center_3 -->
         <!-- Joint is "fixed", skipping it -->
-        <inertial pos="-1.86454e-18 -6.93889e-18 1.46432e-33" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 -3.40671e-21 3.09986e-37 -1.51966e-36"/>
+        <inertial pos="-1.86454e-18 0 1.46432e-33" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 -3.40671e-21 3.09986e-37 -1.51966e-36"/>
         <!-- Part center_3 -->
         <geom type="mesh" class="visual" pos="-2.71051e-18 0.0528 0" quat="0.5 0.5 0.5 -0.5" mesh="center" material="center_material"/>
         <geom type="mesh" class="collision" pos="-2.71051e-18 0.0528 0" quat="0.5 0.5 0.5 -0.5" mesh="center" material="center_material"/>
@@ -99,7 +100,7 @@
         <body name="l_wheel_3" pos="-9.02598e-18 1.66533e-16 0.0381" quat="7.48244e-17 -0.258819 -0.965926 2.14577e-16">
           <!-- Joint from center_3 to l_wheel_3 -->
           <joint axis="0 0 1" name="L3" type="hinge"/>
-          <inertial pos="3.13796e-18 1.38778e-17 -0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 0 0 -7.75692e-54"/>
+          <inertial pos="3.13796e-18 6.93889e-18 -0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 0 0 -1.57949e-53"/>
           <!-- Part l_wheel_3 -->
           <geom type="mesh" class="visual" pos="3.46945e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
           <geom type="mesh" class="collision" pos="3.46945e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
@@ -108,7 +109,7 @@
         <body name="r_wheel_3" pos="-2.15485e-18 -6.93889e-18 -0.0381" quat="0 1 0 0">
           <!-- Joint from center_3 to r_wheel_3 -->
           <joint axis="0 0 1" name="R3" type="hinge"/>
-          <inertial pos="3.46945e-18 -1.66533e-16 0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 -2.23552e-22 -3.88941e-21 -1.83526e-21"/>
+          <inertial pos="0 -1.59595e-16 0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 4.95615e-22 -7.91975e-21 -3.73702e-21"/>
           <!-- Part r_wheel_3 -->
           <geom type="mesh" class="visual" pos="-0.0264 0.0457261 -0.0381" quat="0.353553 0.612372 -0.353553 0.612372" mesh="r_wheel" material="r_wheel_material"/>
           <geom type="mesh" class="collision" pos="-0.0264 0.0457261 -0.0381" quat="0.353553 0.612372 -0.353553 0.612372" mesh="r_wheel" material="r_wheel_material"/>
@@ -118,7 +119,7 @@
       <body name="center_4" pos="-0.0127 -5.50107e-05 -0.0528566" quat="0.5 0.5 -0.5 -0.5">
         <!-- Joint from control to center_4 -->
         <!-- Joint is "fixed", skipping it -->
-        <inertial pos="-2.93913e-19 -6.93889e-18 2.24821e-99" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 0 -8.98706e-86 0"/>
+        <inertial pos="-2.93913e-19 0 2.24821e-99" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 0 -8.98706e-86 0"/>
         <!-- Part center_4 -->
         <geom type="mesh" class="visual" pos="1.73472e-18 0.0528 0" quat="0.5 0.5 0.5 -0.5" mesh="center" material="center_material"/>
         <geom type="mesh" class="collision" pos="1.73472e-18 0.0528 0" quat="0.5 0.5 0.5 -0.5" mesh="center" material="center_material"/>
@@ -128,7 +129,7 @@
         <body name="l_wheel_4" pos="4.0251e-18 0 0.0381" quat="4.32978e-17 -0.707107 -0.707107 -4.35788e-33">
           <!-- Joint from center_4 to l_wheel_4 -->
           <joint axis="0 0 1" name="L4" type="hinge"/>
-          <inertial pos="6.6074e-18 6.93889e-18 -0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 0 0 6.0856e-54"/>
+          <inertial pos="6.6074e-18 0 -0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 0 0 1.23917e-53"/>
           <!-- Part l_wheel_4 -->
           <geom type="mesh" class="visual" pos="6.93889e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
           <geom type="mesh" class="collision" pos="6.93889e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
@@ -137,7 +138,7 @@
         <body name="r_wheel_4" pos="-6.77626e-21 0 -0.0381" quat="0 1 0 0">
           <!-- Joint from center_4 to r_wheel_4 -->
           <joint axis="0 0 1" name="R4" type="hinge"/>
-          <inertial pos="-7.80626e-18 0 0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 1.917e-22 -3.55324e-22 -3.55324e-22"/>
+          <inertial pos="-7.80626e-18 -6.93889e-18 0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 2.36207e-22 -7.23523e-22 -7.23523e-22"/>
           <!-- Part r_wheel_4 -->
           <geom type="mesh" class="visual" pos="0.005362 -0.052527 -0.0381" quat="0.524774 -0.473932 -0.524774 -0.473932" mesh="r_wheel" material="r_wheel_material"/>
           <geom type="mesh" class="collision" pos="0.005362 -0.052527 -0.0381" quat="0.524774 -0.473932 -0.524774 -0.473932" mesh="r_wheel" material="r_wheel_material"/>
@@ -147,7 +148,7 @@
       <body name="center_5" pos="-0.0127 -0.0457812 -0.0264566" quat="0.683013 0.183013 -0.683013 -0.183013">
         <!-- Joint from control to center_5 -->
         <!-- Joint is "fixed", skipping it -->
-        <inertial pos="-1.45222e-18 0 -3.25405e-34" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 1.82565e-21 1.21009e-36 -1.07996e-37"/>
+        <inertial pos="-1.45222e-18 6.93889e-18 -3.25405e-34" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 1.82565e-21 1.21009e-36 -1.07996e-37"/>
         <!-- Part center_5 -->
         <geom type="mesh" class="visual" pos="4.29276e-18 0.0528 0" quat="0.5 0.5 0.5 -0.5" mesh="center" material="center_material"/>
         <geom type="mesh" class="collision" pos="4.29276e-18 0.0528 0" quat="0.5 0.5 0.5 -0.5" mesh="center" material="center_material"/>
@@ -157,7 +158,7 @@
         <body name="l_wheel_5" pos="-3.72694e-20 -1.38778e-17 0.0381" quat="3.69812e-17 -0.965926 -0.258819 9.01064e-18">
           <!-- Joint from center_5 to l_wheel_5 -->
           <joint axis="0 0 1" name="L5" type="hinge"/>
-          <inertial pos="6.6074e-18 6.93889e-18 -0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 3.13942e-38 5.64136e-38 5.30607e-54"/>
+          <inertial pos="6.6074e-18 0 -0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 6.39259e-38 1.14871e-37 1.08044e-53"/>
           <!-- Part l_wheel_5 -->
           <geom type="mesh" class="visual" pos="6.93889e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
           <geom type="mesh" class="collision" pos="6.93889e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
@@ -166,7 +167,7 @@
         <body name="r_wheel_5" pos="-5.01444e-19 6.93889e-18 -0.0381" quat="0 1 0 0">
           <!-- Joint from center_5 to r_wheel_5 -->
           <joint axis="0 0 1" name="R5" type="hinge"/>
-          <inertial pos="-6.93889e-18 6.93889e-18 0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 6.56174e-22 -1.14344e-21 -4.93722e-21"/>
+          <inertial pos="-1.04083e-17 0 0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 6.18881e-22 -2.32831e-21 -1.00533e-20"/>
           <!-- Part r_wheel_5 -->
           <geom type="mesh" class="visual" pos="-0.0264 -0.0457261 -0.0381" quat="0.353553 -0.612372 -0.353553 -0.612372" mesh="r_wheel" material="r_wheel_material"/>
           <geom type="mesh" class="collision" pos="-0.0264 -0.0457261 -0.0381" quat="0.353553 -0.612372 -0.353553 -0.612372" mesh="r_wheel" material="r_wheel_material"/>
@@ -176,7 +177,7 @@
       <body name="center_6" pos="-0.0127 -0.0457812 0.0263434" quat="0.683013 -0.183013 -0.683013 0.183013">
         <!-- Joint from control to center_6 -->
         <!-- Joint is "fixed", skipping it -->
-        <inertial pos="-1.76853e-18 -6.93889e-18 1.22027e-34" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 -4.77595e-21 -1.03432e-36 3.44383e-37"/>
+        <inertial pos="-1.76853e-18 0 1.22027e-34" mass="0.10645" fullinertia="6.13698e-05 6.13698e-05 1.97233e-05 -4.77595e-21 -1.03432e-36 3.44383e-37"/>
         <!-- Part center_6 -->
         <geom type="mesh" class="visual" pos="-3.84892e-18 0.0528 0" quat="0.5 0.5 0.5 -0.5" mesh="center" material="center_material"/>
         <geom type="mesh" class="collision" pos="-3.84892e-18 0.0528 0" quat="0.5 0.5 0.5 -0.5" mesh="center" material="center_material"/>
@@ -186,7 +187,7 @@
         <body name="l_wheel_6" pos="-1.24006e-17 -3.46945e-17 0.0381" quat="7.97124e-17 -0.965926 0.258819 -1.29114e-16">
           <!-- Joint from center_6 to l_wheel_6 -->
           <joint axis="0 0 1" name="L6" type="hinge"/>
-          <inertial pos="3.13796e-18 0 -0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 0 0 -1.24682e-37"/>
+          <inertial pos="3.13796e-18 -6.93889e-18 -0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 0 0 -2.53882e-37"/>
           <!-- Part l_wheel_6 -->
           <geom type="mesh" class="visual" pos="3.46945e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
           <geom type="mesh" class="collision" pos="3.46945e-18 -0.0528 0.0381" quat="0.5 -0.5 -0.5 -0.5" mesh="l_wheel" material="l_wheel_material"/>
@@ -195,7 +196,7 @@
         <body name="r_wheel_6" pos="8.13152e-20 0 -0.0381" quat="0 1 0 0">
           <!-- Joint from center_6 to r_wheel_6 -->
           <joint axis="0 0 1" name="R6" type="hinge"/>
-          <inertial pos="-1.73472e-17 4.16334e-17 0.00723207" mass="0.0404519" fullinertia="7.21399e-06 7.21399e-06 1.30169e-05 -1.87552e-21 -1.81995e-21 -2.85461e-21"/>
+          <inertial pos="-1.38778e-17 3.46945e-17 0.00723207" mass="0.0823695" fullinertia="1.46894e-05 1.46894e-05 2.65054e-05 -2.41107e-21 -3.70584e-21 -5.81265e-21"/>
           <!-- Part r_wheel_6 -->
           <geom type="mesh" class="visual" pos="0.0264 -0.0457261 -0.0381" quat="0.612372 -0.353553 -0.612372 -0.353553" mesh="r_wheel" material="r_wheel_material"/>
           <geom type="mesh" class="collision" pos="0.0264 -0.0457261 -0.0381" quat="0.612372 -0.353553 -0.612372 -0.353553" mesh="r_wheel" material="r_wheel_material"/>
@@ -204,32 +205,31 @@
     </body>
   </worldbody>
   <asset>
-    <mesh file="center.stl"/>
+    <mesh file="suspension_joint.stl"/>
     <mesh file="control.stl"/>
     <mesh file="r_wheel.stl"/>
+    <mesh file="center.stl"/>
     <mesh file="l_wheel.stl"/>
-    <mesh file="suspension_joint.stl"/>
     <material name="control_material" rgba="0 0 0 1"/>
     <material name="suspension_joint_material" rgba="1 1 1 0.898039"/>
     <material name="center_material" rgba="0 0 1 1"/>
     <material name="l_wheel_material" rgba="1 0 0 1"/>
     <material name="r_wheel_material" rgba="0 1 0 1"/>
   </asset>
-   <actuator>
-<velocity class="roller" name="L1" joint="L1" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="R1" joint="R1" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="L2" joint="L2" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="R2" joint="R2" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="L3" joint="L3" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="R3" joint="R3" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="L4" joint="L4" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="R4" joint="R4" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="L5" joint="L5" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="R5" joint="R5" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="L6" joint="L6" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
-<velocity class="roller" name="R6" joint="R6" kv="1" ctrllimited="true" ctrlrange="-250 250" forcerange="-0.28 0.28"/>
+     <actuator>
+        <intvelocity class="roller" name="L1" joint="L1" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="R1" joint="R1" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="L2" joint="L2" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="R2" joint="R2" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="L3" joint="L3" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="R3" joint="R3" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="L4" joint="L4" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="R4" joint="R4" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="L5" joint="L5" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="R5" joint="R5" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="L6" joint="L6" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
+        <intvelocity class="roller" name="R6" joint="R6" kp="1" kv="1" actrange="-1000 1000" forcerange="-0.3 0.3"/>
     </actuator>
-
   <sensor>
     <accelerometer name="roller1_accel" site="roller1"/>
     <accelerometer name="roller2_accel" site="roller2"/>
@@ -238,12 +238,12 @@
     <accelerometer name="roller5_accel" site="roller5"/>
     <accelerometer name="roller6_accel" site="roller6"/>
 
-    <velocimeter name="roller1_gyro" site="roller1"/>
-    <velocimeter name="roller2_gyro" site="roller2"/>
-    <velocimeter name="roller3_gyro" site="roller3"/>
-    <velocimeter name="roller4_gyro" site="roller4"/>
-    <velocimeter name="roller5_gyro" site="roller5"/>
-    <velocimeter name="roller6_gyro" site="roller6"/>
+    <gyro name="roller1_gyro" site="roller1"/>
+    <gyro name="roller2_gyro" site="roller2"/>
+    <gyro name="roller3_gyro" site="roller3"/>
+    <gyro name="roller4_gyro" site="roller4"/>
+    <gyro name="roller5_gyro" site="roller5"/>
+    <gyro name="roller6_gyro" site="roller6"/>
 
     <jointvel name="L1_w" joint="L1"/>
     <jointvel name="R1_w" joint="R1"/>
@@ -258,9 +258,20 @@
     <jointvel name="L6_w" joint="L6"/>
     <jointvel name="R6_w" joint="R6"/>
 
+    <actuatorfrc name="L1_torque" actuator="L1"/>
+    <actuatorfrc name="R1_torque" actuator="R1"/>
+    <actuatorfrc name="L2_torque" actuator="L2"/>
+    <actuatorfrc name="R2_torque" actuator="R2"/>
+    <actuatorfrc name="L3_torque" actuator="L3"/>
+    <actuatorfrc name="R3_torque" actuator="R3"/>
+    <actuatorfrc name="L4_torque" actuator="L4"/>
+    <actuatorfrc name="R4_torque" actuator="R4"/>
+    <actuatorfrc name="L5_torque" actuator="L5"/>
+    <actuatorfrc name="R5_torque" actuator="R5"/>
+    <actuatorfrc name="L6_torque" actuator="L6"/>
+    <actuatorfrc name="R6_torque" actuator="R6"/>
 
     <velocimeter name="total_vel" site="control"/>
     <gyro name="total_ang" site="control"/>
     <accelerometer name="total_grav" site="control"/>
   </sensor> </mujoco>
-
