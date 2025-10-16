@@ -217,18 +217,18 @@
     <material name="r_wheel_material" rgba="0 1 0 1"/>
   </asset>
      <actuator>
-        <intvelocity class="roller" name="L1" joint="L1" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="R1" joint="R1" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="L2" joint="L2" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="R2" joint="R2" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="L3" joint="L3" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="R3" joint="R3" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="L4" joint="L4" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="R4" joint="R4" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="L5" joint="L5" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="R5" joint="R5" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="L6" joint="L6" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
-        <intvelocity class="roller" name="R6" joint="R6" kp="1" kv="0.2" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L1" joint="L1" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R1" joint="R1" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L2" joint="L2" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R2" joint="R2" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L3" joint="L3" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R3" joint="R3" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L4" joint="L4" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R4" joint="R4" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L5" joint="L5" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R5" joint="R5" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="L6" joint="L6" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
+        <intvelocity class="roller" name="R6" joint="R6" kp="1" kv="1" actrange="-1000 1000" forcerange="-5 5"/>
     </actuator>
   <sensor>
     <accelerometer name="roller1_accel" site="roller1"/>
@@ -238,12 +238,12 @@
     <accelerometer name="roller5_accel" site="roller5"/>
     <accelerometer name="roller6_accel" site="roller6"/>
 
-    <velocimeter name="roller1_gyro" site="roller1"/>
-    <velocimeter name="roller2_gyro" site="roller2"/>
-    <velocimeter name="roller3_gyro" site="roller3"/>
-    <velocimeter name="roller4_gyro" site="roller4"/>
-    <velocimeter name="roller5_gyro" site="roller5"/>
-    <velocimeter name="roller6_gyro" site="roller6"/>
+    <gyro name="roller1_gyro" site="roller1"/>
+    <gyro name="roller2_gyro" site="roller2"/>
+    <gyro name="roller3_gyro" site="roller3"/>
+    <gyro name="roller4_gyro" site="roller4"/>
+    <gyro name="roller5_gyro" site="roller5"/>
+    <gyro name="roller6_gyro" site="roller6"/>
 
     <jointvel name="L1_w" joint="L1"/>
     <jointvel name="R1_w" joint="R1"/>

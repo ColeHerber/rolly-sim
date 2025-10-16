@@ -25,6 +25,18 @@ def plot_sensor_history(torque_log, gyro_log):
     sample_start = 200
     sample_end = 2000
 
+    def mask_by_threshold(values, factor=0.5):
+        if len(values) == 0:
+            return None
+        max_val = np.nanmax(values)
+        if not np.isfinite(max_val) or max_val <= 0:
+            return None
+        threshold = factor * max_val
+        mask = values >= threshold
+        if not np.any(mask):
+            return None
+        return np.where(mask, values, np.nan)
+
     for name, samples in torque_log.items():
         if not samples:
             continue
@@ -70,7 +82,9 @@ def plot_sensor_history(torque_log, gyro_log):
         color = color_cycle(idx % color_cycle.N)
         marker = markers[idx % len(markers)]
         if name in gyro_mag:
+            x_vals = np.arange(sample_start, sample_start + len(gyro_mag[name]))
             line_left, = ax_left.plot(
+                x_vals,
                 gyro_mag[name],
                 label=f"{name} gyro",
                 color=color,
@@ -78,7 +92,9 @@ def plot_sensor_history(torque_log, gyro_log):
             )
             left_handles.append(line_left)
         if name in torque_avg:
+            x_vals = np.arange(sample_start, sample_start + len(torque_avg[name]))
             line_right, = ax_right.plot(
+                x_vals,
                 torque_avg[name],
                 label=f"{name} torque",
                 color=color,
@@ -110,22 +126,30 @@ def plot_sensor_history(torque_log, gyro_log):
     for idx, name in enumerate(sorted(torque_log.keys())):
         color = color_cycle(idx % color_cycle.N)
         if name in gyro_delta:
-            line_left, = ax_delta_left.plot(
-                gyro_delta[name],
-                label=f"{name} gyro Δ",
-                color=color,
-                linewidth=1.4,
-            )
-            left_handles.append(line_left)
+            masked_gyro = mask_by_threshold(gyro_delta[name])
+            if masked_gyro is not None:
+                x_vals = np.arange(sample_start, sample_start + len(masked_gyro))
+                line_left, = ax_delta_left.plot(
+                    x_vals,
+                    masked_gyro,
+                    label=f"{name} gyro Δ",
+                    color=color,
+                    linewidth=1.4,
+                )
+                left_handles.append(line_left)
         if name in torque_delta:
-            line_right, = ax_delta_right.plot(
-                torque_delta[name],
-                label=f"{name} torque Δ",
-                color=color,
-                linestyle="--",
-                linewidth=1.4,
-            )
-            right_handles.append(line_right)
+            masked_torque = mask_by_threshold(torque_delta[name])
+            if masked_torque is not None:
+                x_vals = np.arange(sample_start, sample_start + len(masked_torque))
+                line_right, = ax_delta_right.plot(
+                    x_vals,
+                    masked_torque,
+                    label=f"{name} torque Δ",
+                    color=color,
+                    linestyle="--",
+                    linewidth=1.4,
+                )
+                right_handles.append(line_right)
     ax_delta_left.set_title("Change in Gyro & Torque Readings")
     ax_delta_left.set_xlabel("Sample")
     ax_delta_left.set_ylabel("Gyro Change (log scale)")
@@ -146,14 +170,18 @@ def plot_sensor_history(torque_log, gyro_log):
         color = color_cycle(idx % color_cycle.N)
         marker = markers[idx % len(markers)]
         if name in gyro_mag:
+            x_vals = np.arange(sample_start, sample_start + len(gyro_mag[name]))
             ax_gyro_hist.plot(
+                x_vals,
                 gyro_mag[name],
                 label=f"{name} gyro",
                 color=color,
                 linewidth=1.6,
             )
         if name in torque_avg:
+            x_vals = np.arange(sample_start, sample_start + len(torque_avg[name]))
             ax_torque_hist.plot(
+                x_vals,
                 torque_avg[name],
                 label=f"{name} torque",
                 color=color,
@@ -184,7 +212,9 @@ def plot_sensor_history(torque_log, gyro_log):
     for idx, name in enumerate(sorted(torque_avg.keys())):
         marker = markers[idx % len(markers)]
         color = color_cycle(idx % color_cycle.N)
+        x_vals = np.arange(sample_start, sample_start + len(torque_avg[name]))
         ax_torque.plot(
+            x_vals,
             torque_avg[name],
             label=name,
             color=color,
@@ -206,12 +236,16 @@ def plot_sensor_history(torque_log, gyro_log):
     fig_torque_delta, ax_torque_delta = plt.subplots(figsize=(12, 7))
     for idx, name in enumerate(sorted(torque_delta.keys())):
         color = color_cycle(idx % color_cycle.N)
-        ax_torque_delta.plot(
-            torque_delta[name],
-            label=name,
-            color=color,
-            linewidth=1.5,
-        )
+        masked = mask_by_threshold(torque_delta[name])
+        if masked is not None:
+            x_vals = np.arange(sample_start, sample_start + len(masked))
+            ax_torque_delta.plot(
+                x_vals,
+                masked,
+                label=name,
+                color=color,
+                linewidth=1.5,
+            )
     ax_torque_delta.set_title("Change in Roller Torque (High-Pass)")
     ax_torque_delta.set_xlabel("Sample")
     ax_torque_delta.set_ylabel("Torque Change (log scale)")
@@ -227,20 +261,28 @@ def plot_sensor_history(torque_log, gyro_log):
     for idx, name in enumerate(sorted(torque_log.keys())):
         color = color_cycle(idx % color_cycle.N)
         if name in gyro_delta:
-            ax_gyro_delta_top.plot(
-                gyro_delta[name],
-                label=f"{name} gyro Δ",
-                color=color,
-                linewidth=1.5,
-            )
+            masked_gyro = mask_by_threshold(gyro_delta[name])
+            if masked_gyro is not None:
+                x_vals = np.arange(sample_start, sample_start + len(masked_gyro))
+                ax_gyro_delta_top.plot(
+                    x_vals,
+                    masked_gyro,
+                    label=f"{name} gyro Δ",
+                    color=color,
+                    linewidth=1.5,
+                )
         if name in torque_delta:
-            ax_torque_delta_bottom.plot(
-                torque_delta[name],
-                label=f"{name} torque Δ",
-                color=color,
-                linestyle="--",
-                linewidth=1.5,
-            )
+            masked_torque = mask_by_threshold(torque_delta[name])
+            if masked_torque is not None:
+                x_vals = np.arange(sample_start, sample_start + len(masked_torque))
+                ax_torque_delta_bottom.plot(
+                    x_vals,
+                    masked_torque,
+                    label=f"{name} torque Δ",
+                    color=color,
+                    linestyle="--",
+                    linewidth=1.5,
+                )
     ax_gyro_delta_top.set_title("Gyro Change (High-Pass, Log Scale)")
     ax_gyro_delta_top.set_ylabel("Gyro Change")
     ax_gyro_delta_top.set_yscale("log")
@@ -263,7 +305,9 @@ def plot_sensor_history(torque_log, gyro_log):
     for idx, name in enumerate(sorted(gyro_mag.keys())):
         marker = markers[idx % len(markers)]
         color = color_cycle(idx % color_cycle.N)
+        x_vals = np.arange(sample_start, sample_start + len(gyro_mag[name]))
         ax_gyro.plot(
+            x_vals,
             gyro_mag[name],
             label=name,
             color=color,
@@ -285,12 +329,16 @@ def plot_sensor_history(torque_log, gyro_log):
     fig_gyro_delta, ax_gyro_delta = plt.subplots(figsize=(12, 7))
     for idx, name in enumerate(sorted(gyro_delta.keys())):
         color = color_cycle(idx % color_cycle.N)
-        ax_gyro_delta.plot(
-            gyro_delta[name],
-            label=name,
-            color=color,
-            linewidth=1.5,
-        )
+        masked = mask_by_threshold(gyro_delta[name])
+        if masked is not None:
+            x_vals = np.arange(sample_start, sample_start + len(masked))
+            ax_gyro_delta.plot(
+                x_vals,
+                masked,
+                label=name,
+                color=color,
+                linewidth=1.5,
+            )
     ax_gyro_delta.set_title("Change in Roller Gyro Magnitude")
     ax_gyro_delta.set_xlabel("Sample")
     ax_gyro_delta.set_ylabel("Gyro Change (log scale)")
@@ -416,7 +464,7 @@ def roller_actuator_rotation():
                         accel = accel/np.linalg.norm(accel)
                         angle = np.dot(accel, grav)
 
-                        base_speed = 10
+                        base_speed = 300
                         
 
                         speed = base_speed * command
@@ -453,7 +501,7 @@ def roller_actuator_rotation():
                     viewer.sync()
 
                 
-                    time.sleep(0.001)
+                    # time.sleep(0.001)
                     pass
         finally:
             plot_sensor_history(torque_log, gyro_log)
