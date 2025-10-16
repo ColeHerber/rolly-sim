@@ -464,7 +464,7 @@ def roller_actuator_rotation():
                         accel = accel/np.linalg.norm(accel)
                         angle = np.dot(accel, grav)
 
-                        base_speed = 300
+                        base_speed = 150/5
                         
 
                         speed = base_speed * command
@@ -501,7 +501,7 @@ def roller_actuator_rotation():
                     viewer.sync()
 
                 
-                    time.sleep(0.001)
+                    # time.sleep(0.01)
                     pass
         finally:
             plot_sensor_history(torque_log, gyro_log)
