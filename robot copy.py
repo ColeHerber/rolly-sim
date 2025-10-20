@@ -3,7 +3,62 @@ import numpy as np
 import time
 from mujoco.viewer import launch_passive
 from collections import deque
+import matplotlib
+import os
+import json
+from datetime import datetime
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+
+def export_sensor_history(
+    torque_log,
+    gyro_log,
+    accel_log,
+    derived_metrics=None,
+    sample_start=0,
+    sample_end=None,
+    output_dir="data",
+):
+    """
+    Persist raw and derived sensor histories for offline analysis.
+    """
+
+    def _to_serialisable(obj):
+        if isinstance(obj, dict):
+            return {key: _to_serialisable(value) for key, value in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_to_serialisable(value) for value in obj]
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, (np.floating, np.integer)):
+            return obj.item()
+        return obj
+
+    payload = {
+        "metadata": {
+            "timestamp_utc": datetime.utcnow().isoformat(timespec="seconds"),
+            "sample_start": sample_start,
+            "sample_end": sample_end,
+        },
+        "raw": {
+            "torque": _to_serialisable(torque_log),
+            "gyro": _to_serialisable(gyro_log),
+            "accel": _to_serialisable(accel_log),
+        },
+    }
+
+    if derived_metrics:
+        payload["derived"] = _to_serialisable(derived_metrics)
+
+    os.makedirs(output_dir, exist_ok=True)
+    filename = f"sensor_history_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+    filepath = os.path.join(output_dir, filename)
+    with open(filepath, "w", encoding="utf-8") as outfile:
+        json.dump(payload, outfile, indent=2)
+
+    print(f"Sensor history exported to {filepath}")
 
 
 def plot_sensor_history(torque_log, gyro_log, accel_log):
@@ -12,14 +67,19 @@ def plot_sensor_history(torque_log, gyro_log, accel_log):
         return
 
     markers = ['o', 's', '^', 'd', 'v', 'P']
-    color_cycle = plt.cm.get_cmap("tab10", max(len(torque_log), len(markers)))
+    color_cycle = plt.get_cmap("tab10", max(len(torque_log), len(markers)))
 
     torque_avg, torque_delta = {}, {}
     gyro_mag, gyro_delta = {}, {}
     accel_mag, accel_delta = {}, {}
+    gyro_axes = {axis: {} for axis in ("x", "y", "z")}
+    accel_axes = {axis: {} for axis in ("x", "y", "z")}
+    gyro_axes_delta = {axis: {} for axis in ("x", "y", "z")}
+    accel_axes_delta = {axis: {} for axis in ("x", "y", "z")}
+    axis_labels = ("x", "y", "z")
 
     sample_start = 0
-    sample_end = 1000
+    sample_end = 2500
 
     def _slice(arr):
         return arr[sample_start:sample_end] if sample_end is not None else arr[sample_start:]
@@ -41,21 +101,33 @@ def plot_sensor_history(torque_log, gyro_log, accel_log):
         torque_avg[name] = avg_vals
         torque_delta[name] = high_pass(avg_vals)
 
+    torque_axes_delta = {axis: {} for axis in ("avg",)}
+
     for name, samples in gyro_log.items():
         if not samples:
             continue
         comp = np.array(samples, dtype=float)
-        mag_vals = np.clip(_slice(np.linalg.norm(comp, axis=1)), 1e-9, None)
+        comp_slice = _slice(comp)
+        mag_vals = np.clip(np.linalg.norm(comp_slice, axis=1), 1e-9, None)
         gyro_mag[name] = mag_vals
         gyro_delta[name] = high_pass(mag_vals)
+        if comp_slice.size:
+            for idx, axis in enumerate(axis_labels):
+                gyro_axes[axis][name] = comp_slice[:, idx]
+                gyro_axes_delta[axis][name] = high_pass(comp_slice[:, idx])
 
     for name, samples in accel_log.items():
         if not samples:
             continue
         comp = np.array(samples, dtype=float)
-        mag_vals = np.clip(_slice(np.linalg.norm(comp, axis=1)), 1e-9, None)
+        comp_slice = _slice(comp)
+        mag_vals = np.clip(np.linalg.norm(comp_slice, axis=1), 1e-9, None)
         accel_mag[name] = mag_vals
         accel_delta[name] = high_pass(mag_vals)
+        if comp_slice.size:
+            for idx, axis in enumerate(axis_labels):
+                accel_axes[axis][name] = comp_slice[:, idx]
+                accel_axes_delta[axis][name] = high_pass(comp_slice[:, idx])
 
     def plot_dual_axis_pair(filename, title, left_label, left_data, right_label, right_data, left_linestyle='-', right_linestyle='--'):
         fig, ax_left = plt.subplots(figsize=(12, 7))
@@ -148,8 +220,328 @@ def plot_sensor_history(torque_log, gyro_log, accel_log):
         ax.set_xlabel("Sample")
         ax.set_ylabel(ylabel)
         ax.set_yscale("log")
+        ax.set_yscale("log")
         ax.grid(True, linestyle="--", alpha=0.3)
         ax.legend(loc="lower left")
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
+
+    def plot_axis_single(filename, title, ylabel, data_dict, linestyle='-'):
+        fig, ax = plt.subplots(figsize=(12, 7))
+        for idx, name in enumerate(sorted(data_dict.keys())):
+            series = data_dict[name]
+            if series is None or len(series) == 0:
+                continue
+            color = color_cycle(idx % len(markers))
+            marker = markers[idx % len(markers)]
+            x_vals = np.arange(sample_start, sample_start + len(series))
+            ax.plot(
+                x_vals,
+                series,
+                label=name,
+                color=color,
+                linestyle=linestyle,
+                marker=marker,
+                markevery=[len(series) - 1],
+                linewidth=1.6,
+            )
+        ax.set_title(title)
+        ax.set_xlabel("Sample")
+        ax.set_ylabel(ylabel)
+        ax.grid(True, linestyle="--", alpha=0.3)
+        if data_dict:
+            ax.legend(loc="best")
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
+
+    def plot_axis_change_single(filename, title, ylabel, data_dict, linestyle='-'):
+        fig, ax = plt.subplots(figsize=(12, 7))
+        for idx, name in enumerate(sorted(data_dict.keys())):
+            series = data_dict[name]
+            if series is None or len(series) == 0:
+                continue
+            color = color_cycle(idx % len(markers))
+            marker = markers[idx % len(markers)]
+            x_vals = np.arange(sample_start, sample_start + len(series))
+            ax.plot(
+                x_vals,
+                series,
+                label=name,
+                color=color,
+                linestyle=linestyle,
+                marker=marker,
+                markevery=[len(series) - 1],
+                linewidth=1.6,
+            )
+        ax.set_title(title)
+        ax.set_xlabel("Sample")
+        ax.set_ylabel(ylabel)
+        ax.set_yscale("log")
+        ax.grid(True, linestyle="--", alpha=0.3)
+        if data_dict:
+            ax.legend(loc="best")
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
+
+    def plot_axis_with_torque(
+        filename,
+        axis_name,
+        sensor_label,
+        sensor_data,
+        torque_data,
+        sensor_linestyle='-',
+        torque_label="Torque",
+    ):
+        fig, ax_sensor = plt.subplots(figsize=(12, 7))
+        ax_torque = ax_sensor.twinx()
+
+        sensor_handles = []
+        torque_handles = []
+        axis_suffix = axis_name.upper()
+
+        for idx, name in enumerate(sorted(torque_log.keys())):
+            color = color_cycle(idx % len(markers))
+            marker = markers[idx % len(markers)]
+
+            sensor_series = sensor_data.get(name)
+            if sensor_series is not None and len(sensor_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(sensor_series))
+                line_sensor, = ax_sensor.plot(
+                    x_vals,
+                    sensor_series,
+                    label=f"{name} {sensor_label} {axis_suffix}",
+                    color=color,
+                    linestyle=sensor_linestyle,
+                    linewidth=1.6,
+                )
+                sensor_handles.append(line_sensor)
+
+            torque_series = torque_data.get(name)
+            if torque_series is not None and len(torque_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(torque_series))
+                line_torque, = ax_torque.plot(
+                    x_vals,
+                    torque_series,
+                    label=f"{name} {torque_label}",
+                    color=color,
+                    linestyle=":",
+                    linewidth=1.6,
+                )
+                torque_handles.append(line_torque)
+
+        ax_sensor.set_title(f"{axis_suffix}-Axis {sensor_label} with {torque_label} Overlay")
+        ax_sensor.set_xlabel("Sample")
+        ax_sensor.set_ylabel(f"{sensor_label} {axis_suffix}-Axis (log scale)")
+        ax_sensor.set_yscale("log")
+        ax_sensor.grid(True, linestyle="--", alpha=0.3)
+
+        ax_torque.set_ylabel(f"{torque_label} (log scale)")
+        ax_torque.set_yscale("log")
+
+        legend_handles = sensor_handles + torque_handles
+        if legend_handles:
+            ax_sensor.legend(legend_handles, [h.get_label() for h in legend_handles], loc="best")
+
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
+
+    def plot_axis_with_torque_change(
+        filename,
+        axis_name,
+        sensor_label,
+        sensor_change,
+        torque_change,
+        sensor_linestyle='-',
+        torque_label="Torque Change",
+    ):
+        fig, ax_sensor = plt.subplots(figsize=(12, 7))
+        ax_torque = ax_sensor.twinx()
+
+        sensor_handles = []
+        torque_handles = []
+        axis_suffix = axis_name.upper()
+
+        for idx, name in enumerate(sorted(torque_log.keys())):
+            color = color_cycle(idx % len(markers))
+
+            sensor_series = sensor_change.get(name)
+            if sensor_series is not None and len(sensor_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(sensor_series))
+                line_sensor, = ax_sensor.plot(
+                    x_vals,
+                    sensor_series,
+                    label=f"{name} {sensor_label} Δ{axis_suffix}",
+                    color=color,
+                    linestyle=sensor_linestyle,
+                    linewidth=1.6,
+                )
+                sensor_handles.append(line_sensor)
+
+            torque_series = torque_change.get(name)
+            if torque_series is not None and len(torque_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(torque_series))
+                line_torque, = ax_torque.plot(
+                    x_vals,
+                    torque_series,
+                    label=f"{name} {torque_label}",
+                    color=color,
+                    linestyle=":",
+                    linewidth=1.6,
+                )
+                torque_handles.append(line_torque)
+
+        ax_sensor.set_title(f"{axis_suffix}-Axis {sensor_label} Change with {torque_label} Overlay")
+        ax_sensor.set_xlabel("Sample")
+        ax_sensor.set_ylabel(f"{sensor_label} Δ{axis_suffix} (log scale)")
+        ax_sensor.set_yscale("log")
+        ax_sensor.grid(True, linestyle="--", alpha=0.3)
+
+        ax_torque.set_ylabel(f"{torque_label} (log scale)")
+        ax_torque.set_yscale("log")
+
+        legend_handles = sensor_handles + torque_handles
+        if legend_handles:
+            ax_sensor.legend(legend_handles, [h.get_label() for h in legend_handles], loc="best")
+
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
+
+    def plot_axis_combined(filename, axis_name, gyro_data, accel_data, torque_data):
+        fig, ax_sensor = plt.subplots(figsize=(12, 7))
+        ax_torque = ax_sensor.twinx()
+
+        sensor_handles = []
+        torque_handles = []
+        axis_suffix = axis_name.upper()
+
+        for idx, name in enumerate(sorted(torque_log.keys())):
+            color = color_cycle(idx % len(markers))
+            marker = markers[idx % len(markers)]
+
+            gyro_series = gyro_data.get(name)
+            if gyro_series is not None and len(gyro_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(gyro_series))
+                line_gyro, = ax_sensor.plot(
+                    x_vals,
+                    gyro_series,
+                    label=f"{name} Gyro {axis_suffix}",
+                    color=color,
+                    linestyle="-",
+                    linewidth=1.6,
+                )
+                sensor_handles.append(line_gyro)
+
+            accel_series = accel_data.get(name)
+            if accel_series is not None and len(accel_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(accel_series))
+                line_accel, = ax_sensor.plot(
+                    x_vals,
+                    accel_series,
+                    label=f"{name} Accel {axis_suffix}",
+                    color=color,
+                    linestyle="--",
+                    linewidth=1.4,
+                )
+                sensor_handles.append(line_accel)
+
+            torque_series = torque_data.get(name)
+            if torque_series is not None and len(torque_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(torque_series))
+                line_torque, = ax_torque.plot(
+                    x_vals,
+                    torque_series,
+                    label=f"{name} Torque",
+                    color=color,
+                    linestyle=":",
+                    linewidth=1.6,
+                )
+                torque_handles.append(line_torque)
+
+        ax_sensor.set_title(f"{axis_suffix}-Axis Gyro & Accel with Torque Overlay")
+        ax_sensor.set_xlabel("Sample")
+        ax_sensor.set_ylabel(f"{axis_suffix}-Axis Sensor Value (log scale)")
+        ax_sensor.set_yscale("log")
+        ax_sensor.grid(True, linestyle="--", alpha=0.3)
+
+        ax_torque.set_ylabel("Torque (Avg, log scale)")
+        ax_torque.set_yscale("log")
+
+        legend_handles = sensor_handles + torque_handles
+        if legend_handles:
+            ax_sensor.legend(legend_handles, [h.get_label() for h in legend_handles], loc="best")
+
+        fig.tight_layout()
+        plt.savefig(filename)
+        plt.close(fig)
+
+    def plot_axis_combined_change(filename, axis_name, gyro_change, accel_change, torque_change):
+        fig, ax_sensor = plt.subplots(figsize=(12, 7))
+        ax_torque = ax_sensor.twinx()
+
+        sensor_handles = []
+        torque_handles = []
+        axis_suffix = axis_name.upper()
+
+        for idx, name in enumerate(sorted(torque_log.keys())):
+            color = color_cycle(idx % len(markers))
+
+            gyro_series = gyro_change.get(name)
+            if gyro_series is not None and len(gyro_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(gyro_series))
+                line_gyro, = ax_sensor.plot(
+                    x_vals,
+                    gyro_series,
+                    label=f"{name} Gyro Δ{axis_suffix}",
+                    color=color,
+                    linestyle="-",
+                    linewidth=1.6,
+                )
+                sensor_handles.append(line_gyro)
+
+            accel_series = accel_change.get(name)
+            if accel_series is not None and len(accel_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(accel_series))
+                line_accel, = ax_sensor.plot(
+                    x_vals,
+                    accel_series,
+                    label=f"{name} Accel Δ{axis_suffix}",
+                    color=color,
+                    linestyle="--",
+                    linewidth=1.4,
+                )
+                sensor_handles.append(line_accel)
+
+            torque_series = torque_change.get(name)
+            if torque_series is not None and len(torque_series) > 0:
+                x_vals = np.arange(sample_start, sample_start + len(torque_series))
+                line_torque, = ax_torque.plot(
+                    x_vals,
+                    torque_series,
+                    label=f"{name} Torque Δ",
+                    color=color,
+                    linestyle=":",
+                    linewidth=1.6,
+                )
+                torque_handles.append(line_torque)
+
+        ax_sensor.set_title(f"{axis_suffix}-Axis Change with Torque Overlay")
+        ax_sensor.set_xlabel("Sample")
+        ax_sensor.set_ylabel(f"{axis_suffix}-Axis Change (High-Pass, log scale)")
+        ax_sensor.grid(True, linestyle="--", alpha=0.3)
+        ax_sensor.set_yscale("log")
+
+        ax_torque.set_ylabel("Torque Change (High-Pass, log scale)")
+        ax_torque.set_yscale("log")
+
+        legend_handles = sensor_handles + torque_handles
+        if legend_handles:
+            ax_sensor.legend(legend_handles, [h.get_label() for h in legend_handles], loc="best")
+
         fig.tight_layout()
         plt.savefig(filename)
         plt.close(fig)
@@ -200,7 +592,109 @@ def plot_sensor_history(torque_log, gyro_log, accel_log):
     plot_single("graphics/gyro_change_only", "Change in Roller Gyro Magnitude", "Gyro Change (log scale)", gyro_delta)
     plot_single("graphics/accel_change_only", "Change in Roller Acceleration Magnitude", "Acceleration Change (log scale)", accel_delta, linestyle=':')
 
-    # Individual plots generated via helper routines above
+    axis_title_map = {"x": "X", "y": "Y", "z": "Z"}
+    for axis_key in axis_labels:
+        axis_suffix = axis_title_map[axis_key]
+        plot_axis_single(
+            f"graphics/gyro_axis_{axis_key}_curve",
+            f"Gyro {axis_suffix}-Axis History",
+            f"Gyro {axis_suffix}-Axis",
+            gyro_axes[axis_key],
+            linestyle='-',
+        )
+        plot_axis_single(
+            f"graphics/accel_axis_{axis_key}_curve",
+            f"Acceleration {axis_suffix}-Axis History",
+            f"Acceleration {axis_suffix}-Axis",
+            accel_axes[axis_key],
+            linestyle='--',
+        )
+        plot_axis_change_single(
+            f"graphics/gyro_axis_{axis_key}_change",
+            f"Gyro {axis_suffix}-Axis Change (High-Pass)",
+            f"Gyro Δ{axis_suffix}",
+            gyro_axes_delta[axis_key],
+            linestyle='-',
+        )
+        plot_axis_change_single(
+            f"graphics/accel_axis_{axis_key}_change",
+            f"Acceleration {axis_suffix}-Axis Change (High-Pass)",
+            f"Accel Δ{axis_suffix}",
+            accel_axes_delta[axis_key],
+            linestyle='--',
+        )
+        plot_axis_combined(
+            f"graphics/gyro_accel_torque_axis_{axis_key}_curve",
+            axis_suffix,
+            gyro_axes[axis_key],
+            accel_axes[axis_key],
+            torque_avg,
+        )
+        plot_axis_combined_change(
+            f"graphics/gyro_accel_torque_axis_{axis_key}_change",
+            axis_suffix,
+            gyro_axes_delta[axis_key],
+            accel_axes_delta[axis_key],
+            torque_delta,
+        )
+        plot_axis_with_torque(
+            f"graphics/gyro_axis_{axis_key}_torque_curve",
+            axis_suffix,
+            "Gyro",
+            gyro_axes[axis_key],
+            torque_delta,
+            sensor_linestyle='-',
+            torque_label="Torque Change",
+        )
+        plot_axis_with_torque(
+            f"graphics/accel_axis_{axis_key}_torque_curve",
+            axis_suffix,
+            "Accel",
+            accel_axes[axis_key],
+            torque_delta,
+            sensor_linestyle='--',
+            torque_label="Torque Change",
+        )
+        plot_axis_with_torque_change(
+            f"graphics/gyro_axis_{axis_key}_torque_change",
+            axis_suffix,
+            "Gyro",
+            gyro_axes_delta[axis_key],
+            torque_delta,
+            sensor_linestyle='-',
+            torque_label="Torque Change",
+        )
+        plot_axis_with_torque_change(
+            f"graphics/accel_axis_{axis_key}_torque_change",
+            axis_suffix,
+            "Accel",
+            accel_axes_delta[axis_key],
+            torque_delta,
+            sensor_linestyle='--',
+            torque_label="Torque Change",
+        )
+
+    derived_bundle = {
+        "torque_avg": torque_avg,
+        "torque_delta": torque_delta,
+        "gyro_mag": gyro_mag,
+        "gyro_delta": gyro_delta,
+        "accel_mag": accel_mag,
+        "accel_delta": accel_delta,
+        "gyro_axes": gyro_axes,
+        "gyro_axes_delta": gyro_axes_delta,
+        "accel_axes": accel_axes,
+        "accel_axes_delta": accel_axes_delta,
+    }
+
+    export_sensor_history(
+        torque_log,
+        gyro_log,
+        accel_log,
+        derived_metrics=derived_bundle,
+        sample_start=sample_start,
+        sample_end=sample_end,
+    )
 
 def roller_actuator_rotation():
     """
@@ -322,7 +816,7 @@ def roller_actuator_rotation():
                         vel = gyro_vec
                         angle = np.dot(accel, grav)
 
-                        base_speed = 300/5
+                        base_speed = 250/5
                         
 
                         speed = base_speed * command
@@ -359,10 +853,11 @@ def roller_actuator_rotation():
                     viewer.sync()
 
                 
-                    time.sleep(0.001)
+                    time.sleep(0.005)
                     pass
         finally:
-            plot_sensor_history(torque_log, gyro_log, accel_log)
+            print("done")
+            # plot_sensor_history(torque_log, gyro_log, accel_log)
             
     except Exception as e:
         print(f"An error occurred during roller: {e}")
